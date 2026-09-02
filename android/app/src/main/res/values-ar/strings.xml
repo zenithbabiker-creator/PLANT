@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">تشخيص الذرة الرفيعة</string>
+    <string name="app_full_title">الذكاء الاصطناعي لتشخيص أمراض الذرة الرفيعة</string>
+    <string name="camera_permission_rationale">إذن الكاميرا مطلوب لتصوير وفحص أوراق وقناديل محصول الذرة الرفيعة أوفلاين بدون إنترنت.</string>
+    <string name="location_permission_rationale">إذن الموقع الجغرافي مطلوب لتوثيق إحداثيات الحقل لمتابعة بؤر الإصابة الزراعية.</string>
+    
+    <!-- Diagnoses -->
+    <string name="disease_anthracnose">أنثراكنوز الذرة الرفيعة</string>
+    <string name="disease_head_smut">تفحم قناديل الذرة الرفيعة (Head Smut)</string>
+    <string name="disease_loose_smut">التفحم السائب في الذرة الرفيعة (Loose Smut)</string>
+    <string name="disease_rust">صدأ أوراق الذرة الرفيعة (Sorghum Rust)</string>
+    <string name="disease_healthy">نبات ذرة رفيعة سليم (محصول صحي)</string>
+    
+    <!-- Action / UI -->
+    <string name="btn_diagnose">تشخيص المحصول</string>
+    <string name="btn_retake">إعادة التقاط</string>
+    <string name="btn_sync">مزامنة البيانات مع السيرفر</string>
+    <string name="smut_immediate_action">الإزالة الفورية واقتلاع القناديل والنباتات المصابة وحرقها فوراً</string>
+    <string name="phi_countdown_title">عداد فترة الأمان قبل الحصاد (PHI)</string>
+    <string name="offline_mode_active">الذكاء الاصطناعي الطرفي يعمل محلياً (بدون إنترنت)</string>
+</resources>

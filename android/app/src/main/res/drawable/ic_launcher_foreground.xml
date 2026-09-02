@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Modern AI Scanner Corner Brackets (HUD Reticle) -->
+    <!-- Top Left -->
+    <path
+        android:pathData="M30,36 L30,30 L36,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#34D399"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Top Right -->
+    <path
+        android:pathData="M78,36 L78,30 L72,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#34D399"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Bottom Left -->
+    <path
+        android:pathData="M30,72 L30,78 L36,78"
+        android:strokeWidth="2.5"
+        android:strokeColor="#34D399"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Bottom Right -->
+    <path
+        android:pathData="M78,72 L78,78 L72,78"
+        android:strokeWidth="2.5"
+        android:strokeColor="#34D399"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Sorghum Plant Main Stem -->
+    <path
+        android:pathData="M54,82 C53.5,72 54,58 54,46"
+        android:strokeWidth="3.2"
+        android:strokeColor="#059669"
+        android:strokeLineCap="round" />
+
+    <!-- Left Arching Foliage Leaf -->
+    <path
+        android:pathData="M54,64 C42,65 34,70 33,76 C38,76 46,73 54,68"
+        android:fillColor="#10B981" />
+    <path
+        android:pathData="M54,64 C44,65 37,70 33,76"
+        android:strokeWidth="1.2"
+        android:strokeColor="#047857" />
+
+    <!-- Right Arching Foliage Leaf -->
+    <path
+        android:pathData="M54,58 C66,57 74,62 76,68 C71,68 63,65 54,62"
+        android:fillColor="#34D399" />
+    <path
+        android:pathData="M54,58 C64,57 71,62 76,68"
+        android:strokeWidth="1.2"
+        android:strokeColor="#059669" />
+
+    <!-- Sorghum Panicle Head Structure (Golden Grain Clusters) -->
+    <!-- Center Column of Grains -->
+    <path
+        android:pathData="M54,30 C51.5,30 49.5,32.5 49.5,35.5 C49.5,38.5 54,46 54,46 C54,46 58.5,38.5 58.5,35.5 C58.5,32.5 56.5,30 54,30 Z"
+        android:fillColor="#F59E0B" />
+
+    <!-- Grain Beads on Head (Left Side) -->
+    <path
+        android:pathData="M49,34 C46.5,34 44.5,36 44.5,38.5 C44.5,41 49,46 49,46 C49,46 52.5,41 52.5,38.5 C52.5,36 50.8,34 49,34 Z"
+        android:fillColor="#FBBF24" />
+    <path
+        android:pathData="M48,41 C46,41 44.5,42.5 44.5,44.5 C44.5,46.5 48.5,50 48.5,50 C48.5,50 51.5,46.5 51.5,44.5 C51.5,42.5 50,41 48,41 Z"
+        android:fillColor="#D97706" />
+
+    <!-- Grain Beads on Head (Right Side) -->
+    <path
+        android:pathData="M59,34 C57.2,34 55.5,36 55.5,38.5 C55.5,41 60,46 60,46 C60,46 63.5,41 63.5,38.5 C63.5,36 61.5,34 59,34 Z"
+        android:fillColor="#FBBF24" />
+    <path
+        android:pathData="M60,41 C58,41 56.5,42.5 56.5,44.5 C56.5,46.5 60.5,50 60.5,50 C60.5,50 63.5,46.5 63.5,44.5 C63.5,42.5 62,41 60,41 Z"
+        android:fillColor="#D97706" />
+
+    <!-- Top Crown Spikelet -->
+    <path
+        android:pathData="M54,25 C52.5,25 51.5,26.5 51.5,28 C51.5,30 54,33 54,33 C54,33 56.5,30 56.5,28 C56.5,26.5 55.5,25 54,25 Z"
+        android:fillColor="#FDE68A" />
+
+    <!-- Glowing Health AI Sparkle on Top-Right -->
+    <path
+        android:pathData="M68,26 L69.5,29.5 L73,31 L69.5,32.5 L68,36 L66.5,32.5 L63,31 L66.5,29.5 Z"
+        android:fillColor="#34D399" />
+</vector>

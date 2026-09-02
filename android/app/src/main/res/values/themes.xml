@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SorghumHealthAI" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#090d16</item>
+        <item name="android:navigationBarColor">#090d16</item>
+        <item name="android:windowBackground">#090d16</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

@@ -1,0 +1,53 @@
+{
+  "model_name": "Sorghum Disease TFLite Classifier",
+  "model_filename": "sorghum_disease_model.tflite",
+  "labels_filename": "labels.txt",
+  "input_shape": [1, 224, 224, 3],
+  "input_type": "float32",
+  "normalization": {
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225]
+  },
+  "classes": [
+    {
+      "index": 0,
+      "id": "sorghum_anthracnose",
+      "name_en": "Sorghum Anthracnose",
+      "name_ar": "أنثراكنوز الذرة الرفيعة",
+      "treatment_sudan": "Mancozeb 80% WP (Dithane M-45) or Azoxystrobin + Difenoconazole (Amistar Top 325 SC)",
+      "phi_days": 14
+    },
+    {
+      "index": 1,
+      "id": "sorghum_head_smut",
+      "name_en": "Sorghum Head Smut",
+      "name_ar": "تفحم قناديل الذرة الرفيعة (Head Smut)",
+      "treatment_sudan": "Immediate physical removal & burning of infected heads/plants to prevent spore dispersal (Seed treatment before planting with Carboxin + Thiram)",
+      "phi_days": 0
+    },
+    {
+      "index": 2,
+      "id": "sorghum_loose_smut",
+      "name_en": "Sorghum Loose Smut",
+      "name_ar": "التفحم السائب في الذرة الرفيعة (Loose Smut)",
+      "treatment_sudan": "Immediate physical roguing and burning of infected plants before black spores disperse (Use certified fungicide-treated seeds)",
+      "phi_days": 0
+    },
+    {
+      "index": 3,
+      "id": "sorghum_rust",
+      "name_en": "Sorghum Rust",
+      "name_ar": "صدأ أوراق الذرة الرفيعة (Sorghum Rust)",
+      "treatment_sudan": "Propiconazole 25% EC (Tilt) or Hexaconazole 5% EC (Registered in Sudan) / Azoxystrobin (Amistar Top)",
+      "phi_days": 14
+    },
+    {
+      "index": 4,
+      "id": "sorghum_healthy",
+      "name_en": "Healthy Sorghum Plant",
+      "name_ar": "نبات ذرة رفيعة سليم (محصول صحي)",
+      "treatment_sudan": "No pesticide required (Healthy, safe crop)",
+      "phi_days": 0
+    }
+  ]
+}

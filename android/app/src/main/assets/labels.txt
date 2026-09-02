@@ -1,0 +1,5 @@
+sorghum_anthracnose
+sorghum_head_smut
+sorghum_loose_smut
+sorghum_rust
+sorghum_healthy

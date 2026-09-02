@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sorghum AI</string>
+    <string name="app_full_title">Sorghum Disease AI Diagnosis</string>
+    <string name="camera_permission_rationale">Camera permission is required to capture and analyze sorghum leaf and panicle diseases offline.</string>
+    <string name="location_permission_rationale">Location permission is required to geotag field diagnoses for regional outbreak monitoring.</string>
+    
+    <!-- Diagnoses -->
+    <string name="disease_anthracnose">Sorghum Anthracnose</string>
+    <string name="disease_head_smut">Sorghum Head Smut</string>
+    <string name="disease_loose_smut">Sorghum Loose Smut</string>
+    <string name="disease_rust">Sorghum Rust</string>
+    <string name="disease_healthy">Healthy Sorghum Plant</string>
+    
+    <!-- Action / UI -->
+    <string name="btn_diagnose">Diagnose Plant</string>
+    <string name="btn_retake">Retake Photo</string>
+    <string name="btn_sync">Sync to Server</string>
+    <string name="smut_immediate_action">Immediate physical removal &amp; burning of infected panicles</string>
+    <string name="phi_countdown_title">Pre-Harvest Interval (PHI) Countdown</string>
+    <string name="offline_mode_active">Offline Edge AI Active (Zero Internet Required)</string>
+</resources>
