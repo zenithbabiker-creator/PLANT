@@ -28,9 +28,10 @@ jobs:
       - name: Verify or Initialize Gradle Wrapper
         run: |
           if [ ! -f "gradlew" ]; then
-            echo "Gradle wrapper not found. Installing Gradle and generating wrapper..."
-            sudo apt-get update && sudo apt-get install -y gradle
-            gradle wrapper
+            echo "Gradle wrapper not found. Installing Gradle 8.5 and generating wrapper..."
+            wget https://services.gradle.org/distributions/gradle-8.5-bin.zip -P /tmp
+            unzip -q /tmp/gradle-8.5-bin.zip -d /tmp
+            /tmp/gradle-8.5/bin/gradle wrapper
           fi
           chmod +x gradlew
 
