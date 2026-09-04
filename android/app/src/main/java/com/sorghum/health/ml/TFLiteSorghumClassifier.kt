@@ -8,7 +8,6 @@ import com.sorghum.health.data.model.SorghumDiseaseCatalog
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
-import org.tensorflow.lite.gpu.GpuDelegateFactory
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -50,13 +49,16 @@ class TFLiteSorghumClassifier(private val context: Context) {
             val modelBuffer = loadModelFile()
             val options = Interpreter.Options()
 
+            // محاولة تهيئة GPU Delegate بشكل آمن
             val compatList = CompatibilityList()
             if (compatList.isDelegateSupportedOnThisDevice) {
                 try {
-                    val gpuDelegateOptions = compatList.getBestOptionsForThisDevice()
-                    gpuDelegate = GpuDelegate(gpuDelegateOptions)
+                    // الطريقة الصحيحة لإنشاء GPU Delegate في TFLite 2.14.0+
+                    val gpuOptions = compatList.getBestOptionsForThisDevice()
+                    gpuDelegate = GpuDelegate(gpuOptions)
                     options.addDelegate(gpuDelegate)
                 } catch (e: Exception) {
+                    // في حالة الفشل، استخدم المعالج CPU
                     options.setNumThreads(4)
                 }
             } else {
