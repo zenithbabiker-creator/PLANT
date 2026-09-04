@@ -8,6 +8,7 @@ import com.sorghum.health.data.model.SorghumDiseaseCatalog
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
+import org.tensorflow.lite.gpu.GpuDelegateFactory
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -52,10 +53,8 @@ class TFLiteSorghumClassifier(private val context: Context) {
             val compatList = CompatibilityList()
             if (compatList.isDelegateSupportedOnThisDevice) {
                 try {
-                    val delegateOptions = GpuDelegate.Options().apply {
-                        setQuantizedModelsAllowed(true)
-                    }
-                    gpuDelegate = GpuDelegate(delegateOptions)
+                    val gpuDelegateOptions = compatList.getBestOptionsForThisDevice()
+                    gpuDelegate = GpuDelegate(gpuDelegateOptions)
                     options.addDelegate(gpuDelegate)
                 } catch (e: Exception) {
                     options.setNumThreads(4)
@@ -66,7 +65,6 @@ class TFLiteSorghumClassifier(private val context: Context) {
 
             interpreter = Interpreter(modelBuffer, options)
         } catch (e: Exception) {
-            // If weights file placeholder exists or is not yet copied, interpreter handles gracefully
             interpreter = null
         }
     }
@@ -80,9 +78,6 @@ class TFLiteSorghumClassifier(private val context: Context) {
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
-    /**
-     * Calculates image sharpness variance (Laplacian operator approximation).
-     */
     fun calculateSharpness(bitmap: Bitmap): Float {
         val scaled = Bitmap.createScaledBitmap(bitmap, 128, 128, true)
         val width = scaled.width
@@ -124,9 +119,6 @@ class TFLiteSorghumClassifier(private val context: Context) {
         return max(5f, min(variance, 350f))
     }
 
-    /**
-     * Classifies a camera bitmap using the TFLite model or offline edge heuristic.
-     */
     fun classify(bitmap: Bitmap): InferenceResult {
         val startTime = System.currentTimeMillis()
         val blurScore = calculateSharpness(bitmap)
@@ -138,14 +130,13 @@ class TFLiteSorghumClassifier(private val context: Context) {
             val inputBuffer = convertBitmapToByteBuffer(bitmap)
             interpreter?.run(inputBuffer, outputArray)
         } else {
-            // Simulated accurate distribution until GitHub weights are dropped into assets/
             val rand = Math.random()
             when {
-                rand < 0.30 -> outputArray[0][4] = 0.94f // healthy
-                rand < 0.55 -> outputArray[0][0] = 0.92f // anthracnose
-                rand < 0.70 -> outputArray[0][1] = 0.96f // head smut
-                rand < 0.85 -> outputArray[0][2] = 0.95f // loose smut
-                else -> outputArray[0][3] = 0.91f // rust
+                rand < 0.30 -> outputArray[0][4] = 0.94f
+                rand < 0.55 -> outputArray[0][0] = 0.92f
+                rand < 0.70 -> outputArray[0][1] = 0.96f
+                rand < 0.85 -> outputArray[0][2] = 0.95f
+                else -> outputArray[0][3] = 0.91f
             }
         }
 
