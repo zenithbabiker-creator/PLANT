@@ -51,8 +51,15 @@ class TFLiteSorghumClassifier(private val context: Context) {
 
             val compatList = CompatibilityList()
             if (compatList.isDelegateSupportedOnThisDevice) {
-                gpuDelegate = GpuDelegate(compatList.bestOptionsForThisDevice)
-                options.addDelegate(gpuDelegate)
+                try {
+                    val delegateOptions = GpuDelegate.Options().apply {
+                        setQuantizedModelsAllowed(true)
+                    }
+                    gpuDelegate = GpuDelegate(delegateOptions)
+                    options.addDelegate(gpuDelegate)
+                } catch (e: Exception) {
+                    options.setNumThreads(4)
+                }
             } else {
                 options.setNumThreads(4)
             }
