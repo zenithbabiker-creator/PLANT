@@ -168,8 +168,8 @@ fun SorghumAppScreen(
                 title = {
                     Column {
                         Text(
-                            text = if (isArabic) "تشخيص الذرة الرفيعة | Sorghum AI" else "Sorghum Health AI",
-                            fontSize = 17.sp,
+                            text = if (isArabic) "تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)" else "Plant Disease Diagnosis (Sorghum Model)",
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )

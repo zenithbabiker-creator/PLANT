@@ -1,6 +1,6 @@
 {
-  "name": "تشخيص أمراض الذرة الرفيعة | Sorghum AI",
-  "description": "تطبيق أندرويد أوفلاين لتشخيص أمراض الذرة الرفيعة للمزارعين مع عداد فترة الأمان البصري ومزامنة الموقع",
+  "name": "تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)",
+  "description": "تطبيق لتشخيص أمراض النباتات (الذرة الرفيعة نموذجاً) أوفلاين مع عداد فترة الأمان البصري ومزامنة البيانات",
   "requestFramePermissions": ["camera", "geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

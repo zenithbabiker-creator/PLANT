@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "org.sorghum.health"
+    namespace = "com.sorghum.health"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "org.sorghum.health"
+        applicationId = "com.sorghum.health"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

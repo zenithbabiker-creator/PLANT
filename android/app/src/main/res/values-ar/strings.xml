@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">تشخيص الذرة الرفيعة</string>
-    <string name="app_full_title">الذكاء الاصطناعي لتشخيص أمراض الذرة الرفيعة</string>
+    <string name="app_name">تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)</string>
+    <string name="app_full_title">تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)</string>
     <string name="camera_permission_rationale">إذن الكاميرا مطلوب لتصوير وفحص أوراق وقناديل محصول الذرة الرفيعة أوفلاين بدون إنترنت.</string>
     <string name="location_permission_rationale">إذن الموقع الجغرافي مطلوب لتوثيق إحداثيات الحقل لمتابعة بؤر الإصابة الزراعية.</string>
     

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Sorghum AI</string>
-    <string name="app_full_title">Sorghum Disease AI Diagnosis</string>
+    <string name="app_name">Plant Disease Diagnosis</string>
+    <string name="app_full_title">Plant Disease Diagnosis (Sorghum Model)</string>
     <string name="camera_permission_rationale">Camera permission is required to capture and analyze sorghum leaf and panicle diseases offline.</string>
     <string name="location_permission_rationale">Location permission is required to geotag field diagnoses for regional outbreak monitoring.</string>
     
