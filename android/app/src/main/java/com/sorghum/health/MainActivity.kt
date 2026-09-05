@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -213,7 +214,7 @@ fun SorghumAppScreen(
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
                 shape = RoundedCornerShape(20.dp),
-                border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(Color(0xFF059669), Color(0xFF064E3B))))
+                border = BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color(0xFF059669), Color(0xFF064E3B))))
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -293,8 +294,9 @@ fun SorghumAppScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                    border = CardDefaults.outlinedCardBorder().copy(
-                        brush = Brush.verticalGradient(
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
                             if (isSmut) listOf(Color(0xFFE11D48), Color(0xFF881337))
                             else if (isHealthy) listOf(Color(0xFF10B981), Color(0xFF064E3B))
                             else listOf(Color(0xFFF59E0B), Color(0xFF78350F))

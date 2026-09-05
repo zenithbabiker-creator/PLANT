@@ -28,7 +28,7 @@ jobs:
       - name: Locate or Generate Gradle Project Files
         run: |
           # البحث عن المجلد الذي يحتوي على إعدادات Gradle
-          PROJECT_DIR=$(find . -maxdepth 4 -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1 | xargs dirname 2>/dev/null)
+          PROJECT_DIR=$(find . -maxdepth 4 \( -name "settings.gradle" -o -name "settings.gradle.kts" \) | head -n 1 | xargs dirname 2>/dev/null)
 
           if [ -z "$PROJECT_DIR" ]; then
             echo "No existing settings.gradle found. Determining target folder..."

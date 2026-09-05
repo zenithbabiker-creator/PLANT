@@ -94,6 +94,7 @@ dependencies {
     // TensorFlow Lite for Edge AI on-device inference
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.gpu.api)
     implementation(libs.tensorflow.lite.support)
 
     // Local Room Database & SQLite

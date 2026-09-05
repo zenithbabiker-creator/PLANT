@@ -2,9 +2,11 @@
 -keep class org.tensorflow.lite.support.** { *; }
 -dontwarn org.tensorflow.lite.**
 
-# Keep Data Transfer Objects (DTOs)
--keep class org.sorghum.health.data.dto.** { *; }
--keepclassmembers class org.sorghum.health.data.dto.** { *; }
+# Keep Data Transfer Objects (DTOs) and Models
+-keep class com.sorghum.health.data.model.** { *; }
+-keepclassmembers class com.sorghum.health.data.model.** { *; }
+-keep class com.sorghum.health.data.network.** { *; }
+-keepclassmembers class com.sorghum.health.data.network.** { *; }
 
 # Keep Room entities
 -keep class androidx.room.RoomDatabase

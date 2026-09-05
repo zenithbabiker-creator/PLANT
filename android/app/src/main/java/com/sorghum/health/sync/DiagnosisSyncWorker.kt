@@ -28,7 +28,7 @@ class DiagnosisSyncWorker(
         val deviceId = Settings.Secure.getString(
             applicationContext.contentResolver,
             Settings.Secure.ANDROID_ID
-        ) ?: "android_device_${android.os.Build.SERIAL}"
+        ) ?: "android_device_${android.os.Build.MODEL.replace(" ", "_")}"
 
         var hasFailure = false
 
