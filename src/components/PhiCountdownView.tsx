@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, SprayCan, AlertTriangle, ShieldCheck, Sparkles, Clock, Flame, Scissors } from 'lucide-react';
+import { CheckCircle2, SprayCan, AlertTriangle, ShieldCheck, Clock, Flame, Scissors } from 'lucide-react';
 import { DiagnosisResult } from '../types';
 import { SupportedLocale, SupportedCountryCode, STRINGS, getStringsForCountry } from '../data/i18n';
 
@@ -182,7 +182,6 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
                     <CheckCircle2 className="w-14 h-14 text-emerald-950 stroke-[2.8]" />
                   </motion.div>
                 </motion.div>
-                <Sparkles className="w-6 h-6 text-amber-400 absolute -top-1 -right-1 animate-spin" style={{ animationDuration: '6s' }} />
               </div>
 
               <div className="space-y-1.5">

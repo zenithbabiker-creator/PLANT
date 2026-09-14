@@ -1,12 +1,10 @@
 /**
  * Remote Sensing & ESA Satellite API Network Service (Client-Side)
  * 
- * Strict Constraint: All remote sensing, ESA Copernicus Sentinel-2 band calculations,
- * and vegetation anomaly detections are performed entirely on the external server.
- * This client service only fetches the computed results.
+ * Routes queries to external server via VITE_API_BASE_URL
  */
 
-import { AppNetworkConfig } from '../config';
+import { apiClient, API_ENDPOINTS } from '../apiClient';
 import { FieldHealthResponseDTO, RemoteSensingQueryDTO } from '../dto/remoteSensing.dto';
 
 export interface IRemoteSensingApiService {
@@ -17,12 +15,6 @@ export interface IRemoteSensingApiService {
 }
 
 export class RemoteSensingApiService implements IRemoteSensingApiService {
-  private networkConfig: AppNetworkConfig;
-
-  constructor(networkConfig?: AppNetworkConfig) {
-    this.networkConfig = networkConfig || AppNetworkConfig.getInstance();
-  }
-
   /**
    * Requests remote sensing analysis from the external server based on GPS coordinates.
    */
@@ -30,46 +22,24 @@ export class RemoteSensingApiService implements IRemoteSensingApiService {
     query: RemoteSensingQueryDTO,
     abortSignal?: AbortSignal
   ): Promise<FieldHealthResponseDTO | null> {
-    const config = this.networkConfig.getConfig();
-    const endpoint = new URL(config.endpoints.getRemoteSensingHealth);
-    
-    endpoint.searchParams.set('lat', query.latitude.toString());
-    endpoint.searchParams.set('lng', query.longitude.toString());
-    if (query.radiusMeters) {
-      endpoint.searchParams.set('radius', query.radiusMeters.toString());
-    }
-    if (query.cropType) {
-      endpoint.searchParams.set('crop', query.cropType);
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs);
-
-    if (abortSignal) {
-      abortSignal.addEventListener('abort', () => controller.abort());
-    }
-
     try {
-      const response = await fetch(endpoint.toString(), {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'X-Device-Id': query.deviceId || this.networkConfig.getDeviceId()
+      const response = await apiClient.get<FieldHealthResponseDTO>(
+        API_ENDPOINTS.REMOTE_SENSING,
+        {
+          lat: query.latitude,
+          lng: query.longitude,
+          radius: query.radiusMeters,
+          crop: query.cropType || 'sorghum',
+          deviceId: query.deviceId || apiClient.getDeviceId()
         },
-        signal: controller.signal
-      });
+        { signal: abortSignal, timeoutMs: 15000 }
+      );
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Remote sensing query failed: HTTP ${response.status}`);
+      if (response.ok && response.data) {
+        return response.data;
       }
-
-      const data: FieldHealthResponseDTO = await response.json();
-      return data;
+      return null;
     } catch (err: any) {
-      clearTimeout(timeoutId);
-      // Log for diagnostic tracing without breaking client UI
       console.warn('Remote sensing fetch notice:', err?.message || err);
       return null;
     }

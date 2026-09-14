@@ -2,10 +2,10 @@
  * SMS Notification & Field Alert Architecture (Client-Side)
  * 
  * Manages reception and dispatching of SMS broadcasts and push notifications
- * for low-connectivity rural farmers.
+ * for low-connectivity rural farmers using VITE_API_BASE_URL.
  */
 
-import { AppNetworkConfig } from '../config';
+import { apiClient, API_ENDPOINTS } from '../apiClient';
 import { 
   FarmerSmsAlertDTO, 
   PushNotificationDTO, 
@@ -25,13 +25,11 @@ export interface ISmsAlertService {
 
 export class SorghumNotificationManager implements ISmsAlertService {
   private static instance: SorghumNotificationManager;
-  private networkConfig: AppNetworkConfig;
   private alertListeners: AlertListener[] = [];
   private pushListeners: PushListener[] = [];
   private storedAlerts: FarmerSmsAlertDTO[] = [];
 
   private constructor() {
-    this.networkConfig = AppNetworkConfig.getInstance();
     this.loadCachedAlerts();
   }
 
@@ -66,13 +64,8 @@ export class SorghumNotificationManager implements ISmsAlertService {
   }
 
   public async registerDeviceForAlerts(request: NotificationRegisterRequestDTO): Promise<boolean> {
-    const config = this.networkConfig.getConfig();
     try {
-      const response = await fetch(config.endpoints.registerDeviceToken, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
-      });
+      const response = await apiClient.post(API_ENDPOINTS.REGISTER_DEVICE, request);
       return response.ok;
     } catch {
       return false;
@@ -80,14 +73,17 @@ export class SorghumNotificationManager implements ISmsAlertService {
   }
 
   public async fetchPendingSmsAlerts(deviceId: string): Promise<FarmerSmsAlertDTO[]> {
-    const config = this.networkConfig.getConfig();
     try {
-      const url = `${config.endpoints.getFarmerAlerts}?deviceId=${encodeURIComponent(deviceId)}`;
-      const response = await fetch(url, { method: 'GET' });
-      if (response.ok) {
-        const alerts: FarmerSmsAlertDTO[] = await response.json();
-        alerts.forEach((a) => this.dispatchAlert(a));
-        return alerts;
+      const response = await apiClient.get<FarmerSmsAlertDTO[] | { alerts: FarmerSmsAlertDTO[] }>(
+        API_ENDPOINTS.SMS_ALERTS,
+        { deviceId }
+      );
+      if (response.ok && response.data) {
+        const alertsList: FarmerSmsAlertDTO[] = Array.isArray(response.data) 
+          ? response.data 
+          : (response.data.alerts || []);
+        alertsList.forEach((a) => this.dispatchAlert(a));
+        return alertsList;
       }
     } catch (e) {
       console.warn('SMS alert sync offline or endpoint pending:', e);

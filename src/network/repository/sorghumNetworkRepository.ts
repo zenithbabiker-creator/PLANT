@@ -36,8 +36,8 @@ export class SorghumNetworkRepository implements ISorghumNetworkRepository {
 
   private constructor() {
     this.config = AppNetworkConfig.getInstance();
-    this.diagnosisApi = new DiagnosisApiService(this.config);
-    this.remoteSensingApi = new RemoteSensingApiService(this.config);
+    this.diagnosisApi = new DiagnosisApiService();
+    this.remoteSensingApi = new RemoteSensingApiService();
     this.notificationService = SorghumNotificationManager.getInstance();
   }
 
@@ -64,6 +64,7 @@ export class SorghumNetworkRepository implements ISorghumNetworkRepository {
         isMockLocation: diagnosis.gps.isMock || false
       },
       deviceId: this.config.getDeviceId(),
+      clientIp: diagnosis.userIp,
       capturedTimestampUtc: diagnosis.timestamp,
       clientVersion: '1.0.0-android-client',
       metadata: {

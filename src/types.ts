@@ -39,6 +39,7 @@ export interface DiagnosisResult {
     accuracy: number;
     isMock?: boolean;
   };
+  userIp?: string;
   appliedPesticideDate?: number; // timestamp when pesticide was sprayed
   initialPhiDays?: number;
   remainingPhiDays?: number;

@@ -86,7 +86,8 @@ export class SorghumOnDeviceClassifier {
     imageUri: string,
     forcedDiseaseId?: string,
     forcedBlurry?: boolean,
-    gpsCoords?: { latitude: number; longitude: number; accuracy: number }
+    gpsCoords?: { latitude: number; longitude: number; accuracy: number },
+    userIp?: string
   ): Promise<DiagnosisResult> {
     // 1. Calculate Blur Score
     const blurScore = forcedBlurry !== undefined 
@@ -116,6 +117,7 @@ export class SorghumOnDeviceClassifier {
         blurScore,
         imageUri,
         gps,
+        userIp: userIp || '127.0.0.1',
         syncStatus: 'PENDING'
       };
     }
@@ -156,6 +158,7 @@ export class SorghumOnDeviceClassifier {
       disease: matchedDisease,
       imageUri,
       gps,
+      userIp: userIp || '127.0.0.1',
       appliedPesticideDate: isHealthy ? undefined : timestamp,
       initialPhiDays: matchedDisease.phi_days,
       remainingPhiDays: matchedDisease.phi_days,
