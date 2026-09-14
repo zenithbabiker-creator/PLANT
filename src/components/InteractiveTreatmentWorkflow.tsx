@@ -50,9 +50,9 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
 }) => {
   const activeCountry = countryCode || 'sudan';
   const countryConfig = COUNTRY_CONFIGS[activeCountry] || COUNTRY_CONFIGS.sudan;
-  const effectiveLang = countryConfig.primaryLanguage;
-  const t = getStringsForCountry(activeCountry);
-  const isRtl = countryConfig.direction === 'rtl';
+  const effectiveLang = locale || countryConfig.primaryLanguage;
+  const t = getStringsForCountry(activeCountry, locale);
+  const isRtl = locale === 'ar';
   const db = SorghumLocalRoomDatabase.getInstance();
 
   // Localized disease info

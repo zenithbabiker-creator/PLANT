@@ -21,7 +21,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
   countryCode,
   isCansRevealed = true
 }) => {
-  const t = countryCode ? getStringsForCountry(countryCode) : (STRINGS[locale] || STRINGS.ar);
+  const t = getStringsForCountry(countryCode || 'sudan', locale);
   const isHealthy = diagnosis.status === 'HEALTHY' || diagnosis.disease?.is_healthy;
   const isSmutDisease = diagnosis.disease?.id_disease === 'sorghum_head_smut' || diagnosis.disease?.id_disease === 'sorghum_loose_smut';
   const initialDays = diagnosis.initialPhiDays || diagnosis.disease?.phi_days || 0;
@@ -75,10 +75,10 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
             <h3 className="text-base md:text-lg font-bold text-white leading-tight">
               {isSmutDisease 
                 ? (locale === 'ar' ? 'العلاج المعتمد: الإزالة الفورية' : 'Approved Treatment: Immediate Removal')
-                : isHarvestReady ? t.phiHarvestReady : t.phiTitle}
+                : isHarvestReady ? t.harvestReadyTitle : t.phiTitle}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 max-w-sm">
-              {diagnosis.disease?.recommended_pesticide_ar || diagnosis.disease?.recommended_pesticide || t.recommendedPesticide}
+              {diagnosis.disease?.recommended_pesticide_ar || diagnosis.disease?.recommended_pesticide || t.pesticideLabel}
             </p>
           </div>
         </div>
@@ -101,12 +101,12 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
           ) : isHarvestReady ? (
             <>
               <CheckCircle2 className="w-4 h-4" />
-              <span>{t.readyZeroDays}</span>
+              <span>{t.harvestReadyTitle}</span>
             </>
           ) : (
             <>
               <span className="text-base">{remainingDays}</span>
-              <span className="text-xs">{t.daysRemainingShort}</span>
+              <span className="text-xs">{t.daysRemaining}</span>
             </>
           )}
         </div>
@@ -187,10 +187,10 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
 
               <div className="space-y-1.5">
                 <span className="inline-block px-3 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-xs font-black tracking-wide">
-                  {t.pesticideGoneBadge}
+                  {t.safeHarvestBadge}
                 </span>
                 <h4 className="text-xl md:text-2xl font-black text-emerald-400">
-                  {t.phiHarvestReady}
+                  {t.harvestReadyTitle}
                 </h4>
                 <p className="text-xs md:text-sm text-slate-300 max-w-sm">
                   {t.safeHarvestDesc}
@@ -211,10 +211,10 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
                 <div className="flex items-center justify-between mb-3 text-xs text-slate-400 font-medium">
                   <span className="flex items-center gap-1.5 text-amber-400">
                     <SprayCan className="w-4 h-4" />
-                    <span>{t.sprayCanTip}</span>
+                    <span>{t.canRepresentsDay}</span>
                   </span>
                   <span className="font-bold text-white">
-                    {remainingDays} / {initialDays} {t.daysRemainingShort}
+                    {remainingDays} / {initialDays} {t.daysRemaining}
                   </span>
                 </div>
 
@@ -239,7 +239,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
               <div className="flex items-center gap-3 p-3 bg-amber-950/50 rounded-xl border border-amber-700/60 text-amber-200 text-xs md:text-sm">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-400" />
                 <span>
-                  <strong>{t.phiWarning}</strong>
+                  <strong>{t.healthWarning}</strong>
                 </span>
               </div>
             </motion.div>
@@ -252,7 +252,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
         <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="text-slate-400 flex items-center gap-1.5 text-[11px]">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{t.phiLogicDesc}</span>
+            <span>{t.canRepresentsDay}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -261,7 +261,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
               disabled={remainingDays <= 0}
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 border border-slate-700 shadow-sm"
             >
-              <span>{t.advance24hBtn}</span>
+              <span>{t.advance24h}</span>
             </button>
 
             <button
@@ -269,7 +269,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
               disabled={remainingDays >= initialDays}
               className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 disabled:opacity-30 text-slate-300 rounded-xl font-medium text-xs transition-colors border border-slate-800"
             >
-              <span>+1 {t.daysRemainingShort}</span>
+              <span>+1 {t.daysRemaining}</span>
             </button>
 
             {onResetDays && (
@@ -277,7 +277,7 @@ export const PhiCountdownView: React.FC<PhiCountdownViewProps> = ({
                 onClick={() => onResetDays(0)}
                 className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl font-bold text-xs transition-colors border border-amber-500/40"
               >
-                <span>{t.jumpToHarvestBtn}</span>
+                <span>{t.jumpHarvest}</span>
               </button>
             )}
           </div>

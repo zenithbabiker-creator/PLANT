@@ -31,7 +31,7 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
   locale = 'ar',
   countryCode
 }) => {
-  const t = countryCode ? getStringsForCountry(countryCode) : (STRINGS[locale] || STRINGS.ar);
+  const t = getStringsForCountry(countryCode || 'sudan', locale);
   const [isLiveCamera, setIsLiveCamera] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);

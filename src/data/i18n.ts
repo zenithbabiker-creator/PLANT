@@ -77,6 +77,22 @@ export const COUNTRY_CONFIGS: Record<SupportedCountryCode, CountryConfig> = {
   }
 };
 
+export interface LanguageConfig {
+  code: SupportedLanguageCode;
+  nameNative: string;
+  nameEn: string;
+  flag: string;
+  direction: LayoutDirection;
+}
+
+export const SUPPORTED_LANGUAGES: Record<SupportedLanguageCode, LanguageConfig> = {
+  ar: { code: 'ar', nameNative: 'العربية', nameEn: 'Arabic', flag: '🇸🇩', direction: 'rtl' },
+  en: { code: 'en', nameNative: 'English', nameEn: 'English', flag: '🇬🇧', direction: 'ltr' },
+  sw: { code: 'sw', nameNative: 'Kiswahili', nameEn: 'Swahili', flag: '🇰🇪', direction: 'ltr' },
+  rw: { code: 'rw', nameNative: 'Ikinyarwanda', nameEn: 'Kinyarwanda', flag: '🇷🇼', direction: 'ltr' },
+  ny: { code: 'ny', nameNative: 'Chichewa', nameEn: 'Chichewa', flag: '🇲🇼', direction: 'ltr' }
+};
+
 export const RAW_DICTIONARIES: Record<SupportedLanguageCode, Record<string, string>> = {
   ar: arTranslations,
   en: enTranslations,
@@ -89,9 +105,15 @@ export const RAW_DICTIONARIES: Record<SupportedLanguageCode, Record<string, stri
  * Creates a merged string object with safe fallback hierarchy.
  * If a key is missing in primary locale, it checks fallback locale, then English.
  */
-export function getStringsForCountry(countryCode: SupportedCountryCode): LocaleStrings {
+export function getStringsForCountry(
+  countryCode: SupportedCountryCode, 
+  languageOverride?: SupportedLanguageCode | string
+): LocaleStrings {
   const config = COUNTRY_CONFIGS[countryCode] || COUNTRY_CONFIGS.sudan;
-  const primaryDict = RAW_DICTIONARIES[config.primaryLanguage] || RAW_DICTIONARIES.en;
+  const activeLang = ((languageOverride as SupportedLanguageCode) in RAW_DICTIONARIES)
+    ? (languageOverride as SupportedLanguageCode)
+    : config.primaryLanguage;
+  const primaryDict = RAW_DICTIONARIES[activeLang] || RAW_DICTIONARIES.en;
   const fallbackDict = RAW_DICTIONARIES[config.fallbackLanguage] || RAW_DICTIONARIES.en;
   const enDict = RAW_DICTIONARIES.en;
 
@@ -101,6 +123,19 @@ export function getStringsForCountry(countryCode: SupportedCountryCode): LocaleS
 
   for (const key of allKeys) {
     result[key] = primaryDict[key] || fallbackDict[key] || enDict[key] || '';
+  }
+
+  return result as LocaleStrings;
+}
+
+export function getStringsForLanguage(lang: SupportedLanguageCode): LocaleStrings {
+  const primaryDict = RAW_DICTIONARIES[lang] || RAW_DICTIONARIES.en;
+  const enDict = RAW_DICTIONARIES.en;
+  const result: Record<string, string> = {};
+  const allKeys = Object.keys(enDict) as (keyof LocaleStrings)[];
+
+  for (const key of allKeys) {
+    result[key] = primaryDict[key] || enDict[key] || '';
   }
 
   return result as LocaleStrings;

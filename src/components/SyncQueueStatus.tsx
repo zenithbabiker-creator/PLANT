@@ -14,10 +14,10 @@ import {
 import { SorghumWorkManagerSyncService, SyncStatusState } from '../sync/workManager';
 import { SorghumLocalRoomDatabase } from '../data/local/roomDb';
 import { SyncQueueRecord } from '../types';
-import { SupportedLocale, SupportedCountryCode, STRINGS, getStringsForCountry } from '../data/i18n';
+import { SupportedLanguageCode, SupportedCountryCode, getStringsForCountry } from '../data/i18n';
 
 interface SyncQueueStatusProps {
-  locale?: SupportedLocale;
+  locale?: SupportedLanguageCode;
   countryCode?: SupportedCountryCode;
 }
 
@@ -25,7 +25,7 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
   locale = 'ar',
   countryCode
 }) => {
-  const t = countryCode ? getStringsForCountry(countryCode) : (STRINGS[locale] || STRINGS.ar);
+  const t = getStringsForCountry(countryCode || 'sudan', locale);
   const syncService = SorghumWorkManagerSyncService.getInstance();
   const db = SorghumLocalRoomDatabase.getInstance();
 
@@ -70,7 +70,7 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
               {t.syncQueueTitle}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              {t.syncSubtitle}
+              {t.syncQueueDesc}
             </p>
           </div>
         </div>
@@ -83,17 +83,17 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
               ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60 shadow-emerald-900/20'
               : 'bg-amber-950/80 text-amber-300 border-amber-700/60 shadow-amber-900/20'
           }`}
-          title={t.syncToggleTip}
+          title={t.syncQueueDesc}
         >
           {syncState.isOnline ? (
             <>
               <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t.syncOnline}</span>
+              <span>{t.onlineMode}</span>
             </>
           ) : (
             <>
               <WifiOff className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t.syncOffline}</span>
+              <span>{t.offlineFieldMode}</span>
             </>
           )}
         </button>
@@ -102,27 +102,27 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
       {/* Sync Queue Summary Counter */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
         <div className="bg-slate-950/70 rounded-2xl p-3.5 border border-slate-800/90 shadow-inner">
-          <span className="text-xs text-slate-400 font-medium block mb-1">{t.pendingSyncLocal}</span>
+          <span className="text-xs text-slate-400 font-medium block mb-1">{t.pendingLocal}</span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-black text-amber-400">{syncState.pendingCount}</span>
-            <span className="text-xs text-slate-500">{t.recordUnit}</span>
+            <span className="text-xs text-slate-500">{t.sampleLeafNeutral}</span>
           </div>
         </div>
 
         <div className="bg-slate-950/70 rounded-2xl p-3.5 border border-slate-800/90 shadow-inner">
-          <span className="text-xs text-slate-400 font-medium block mb-1">{t.syncedCountLabel}</span>
+          <span className="text-xs text-slate-400 font-medium block mb-1">{t.syncedCount}</span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-black text-emerald-400">{syncState.syncedCount}</span>
-            <span className="text-xs text-slate-500">{t.recordUnit}</span>
+            <span className="text-xs text-slate-500">{t.sampleLeafNeutral}</span>
           </div>
         </div>
 
         <div className="col-span-2 md:col-span-1 bg-slate-950/70 rounded-2xl p-3.5 border border-slate-800/90 shadow-inner flex flex-col justify-between">
-          <span className="text-xs text-slate-400 font-medium">{t.workerStatus}</span>
+          <span className="text-xs text-slate-400 font-medium">{t.backgroundWorker}</span>
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${syncState.isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-              {syncState.isSyncing ? t.uploadingState : t.workerIdle}
+              {syncState.isSyncing ? t.workerUploading : t.workerReady}
             </span>
             <button
               onClick={handleManualSync}
@@ -140,12 +140,12 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
       <div className="space-y-2">
         <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
           <Layers className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{t.storedDiagnosesWithGps}</span>
+          <span>{t.savedGpsRecords}</span>
         </span>
 
         {syncQueue.length === 0 ? (
           <div className="py-6 text-center text-xs text-slate-400 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">
-            {t.noRecordsNotice}
+            {t.noRecordsYet}
           </div>
         ) : (
           <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
@@ -160,7 +160,7 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
                   </div>
                   <div>
                     <div className="font-bold text-white flex items-center gap-1.5">
-                      <span>{item.diseaseId === 'sorghum_healthy' ? t.sampleHealthyBadge : `${t.sampleDiseasedBadge} (${item.diseaseId})`}</span>
+                      <span>{item.diseaseId === 'sorghum_healthy' ? t.statusHealthy : `${t.statusDiseased} (${item.diseaseId})`}</span>
                     </div>
                     <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                       <span className="flex items-center gap-0.5 font-mono">
@@ -169,7 +169,7 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
                       </span>
                       <span className="flex items-center gap-0.5 font-mono">
                         <Clock className="w-3 h-3 text-slate-500" />
-                        {new Date(item.capturedAt).toLocaleTimeString(locale === 'ar' ? 'ar-SD' : 'rw-RW', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(item.capturedAt).toLocaleTimeString(locale === 'ar' ? 'ar-SD' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
@@ -179,15 +179,15 @@ export const SyncQueueStatus: React.FC<SyncQueueStatusProps> = ({
                   {item.status === 'SYNCED' ? (
                     <span className="px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-bold text-[10px] flex items-center gap-1 shadow-xs">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      <span>{t.syncedState}</span>
+                      <span>{t.syncedBadge}</span>
                     </span>
                   ) : item.status === 'UPLOADING' ? (
                     <span className="px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60 font-bold text-[10px] animate-pulse">
-                      {t.uploadingState}
+                      {t.workerUploading}
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold text-[10px]">
-                      {t.inLocalQueueState}
+                      {t.inLocalQueue}
                     </span>
                   )}
                 </div>

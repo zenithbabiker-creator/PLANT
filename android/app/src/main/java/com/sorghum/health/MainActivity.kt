@@ -28,8 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -163,45 +165,67 @@ fun SorghumAppScreen(
     val isHealthy = selectedDisease?.isHealthy == true
     val isHarvestReady = isHealthy || (remainingDays == 0 && !isSmut)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (isArabic) "تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)" else "Plant Disease Diagnosis (Sorghum Model)",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = if (isArabic) "ذكاء اصطناعي طرفي (أوفلاين بدون إنترنت)" else "On-Device Edge AI (Zero Internet)",
-                            fontSize = 11.sp,
-                            color = Color(0xFF34D399)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { isArabic = !isArabic }) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = "Language",
-                            tint = Color(0xFFFBBF24)
-                        )
-                    }
-                    IconButton(onClick = onSyncRequested) {
-                        Icon(
-                            imageVector = Icons.Default.CloudSync,
-                            contentDescription = "Sync",
-                            tint = Color(0xFF34D399)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF090D16))
-            )
-        },
-        containerColor = Color(0xFF090D16)
-    ) { padding ->
+    CompositionLocalProvider(
+        LocalLayoutDirection provides (if (isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = if (isArabic) "تشخيص أمراض النباتات (الذرة الرفيعة نموذجًا)" else "Plant Disease Diagnosis (Sorghum Model)",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = if (isArabic) "ذكاء اصطناعي طرفي (أوفلاين بدون إنترنت)" else "On-Device Edge AI (Zero Internet)",
+                                fontSize = 11.sp,
+                                color = Color(0xFF34D399)
+                            )
+                        }
+                    },
+                    actions = {
+                        Surface(
+                            onClick = { isArabic = !isArabic },
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0x25FBBF24),
+                            border = BorderStroke(1.dp, Color(0x66FBBF24)),
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Language,
+                                    contentDescription = "Language",
+                                    tint = Color(0xFFFBBF24),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = if (isArabic) "English (EN)" else "العربية (AR)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFBBF24)
+                                )
+                            }
+                        }
+                        IconButton(onClick = onSyncRequested) {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = "Sync",
+                                tint = Color(0xFF34D399)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF090D16))
+                )
+            },
+            containerColor = Color(0xFF090D16)
+        ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -272,8 +296,25 @@ fun SorghumAppScreen(
                             onDiagnoseSample(disease.id)
                         },
                         label = {
+                            val chipName = if (isArabic) {
+                                when (disease.id) {
+                                    "sorghum_anthracnose" -> "أنثراكنوز"
+                                    "sorghum_head_smut" -> "تفحم القناديل"
+                                    "sorghum_loose_smut" -> "التفحم السائب"
+                                    "sorghum_rust" -> "الصدأ"
+                                    else -> "سليم"
+                                }
+                            } else {
+                                when (disease.id) {
+                                    "sorghum_anthracnose" -> "Anthracnose"
+                                    "sorghum_head_smut" -> "Head Smut"
+                                    "sorghum_loose_smut" -> "Loose Smut"
+                                    "sorghum_rust" -> "Rust"
+                                    else -> "Healthy"
+                                }
+                            }
                             Text(
-                                text = if (isArabic) disease.nameAr.split(" ")[0] else disease.nameEn.split(" ")[1],
+                                text = chipName,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
@@ -437,4 +478,5 @@ fun SorghumAppScreen(
             }
         }
     }
+}
 }

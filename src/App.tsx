@@ -8,11 +8,19 @@ import { Sprout } from 'lucide-react';
 import { CameraViewfinder } from './components/CameraViewfinder';
 import { InteractiveTreatmentWorkflow } from './components/InteractiveTreatmentWorkflow';
 import { CountrySelector } from './components/CountrySelector';
+import { LanguageSelector } from './components/LanguageSelector';
 import { DiagnosisResult } from './types';
 import { SorghumLocalRoomDatabase } from './data/local/roomDb';
 import { SorghumExtensionRegistry } from './core/extensionHook';
 import { SorghumWorkManagerSyncService } from './sync/workManager';
-import { SupportedLocale, SupportedCountryCode, COUNTRY_CONFIGS, getStringsForCountry } from './data/i18n';
+import { 
+  SupportedLocale, 
+  SupportedCountryCode, 
+  SupportedLanguageCode,
+  COUNTRY_CONFIGS, 
+  SUPPORTED_LANGUAGES,
+  getStringsForCountry 
+} from './data/i18n';
 
 export default function App() {
   const db = SorghumLocalRoomDatabase.getInstance();
@@ -20,12 +28,24 @@ export default function App() {
   const syncService = SorghumWorkManagerSyncService.getInstance();
 
   const [country, setCountry] = useState<SupportedCountryCode>('sudan');
+  const [language, setLanguage] = useState<SupportedLanguageCode>('ar');
   const [activeDiagnosis, setActiveDiagnosis] = useState<DiagnosisResult | null>(null);
 
   const countryConfig = COUNTRY_CONFIGS[country] || COUNTRY_CONFIGS.sudan;
-  const locale = countryConfig.primaryLanguage as SupportedLocale;
-  const t = getStringsForCountry(country);
-  const isRtl = countryConfig.direction === 'rtl';
+  const langConfig = SUPPORTED_LANGUAGES[language] || SUPPORTED_LANGUAGES.en;
+  const t = getStringsForCountry(country, language);
+  const isRtl = langConfig.direction === 'rtl';
+
+  const handleCountryChange = (newCountry: SupportedCountryCode) => {
+    setCountry(newCountry);
+    // If not already explicitly using English, update to country's default language
+    if (language !== 'en') {
+      const newConfig = COUNTRY_CONFIGS[newCountry];
+      if (newConfig) {
+        setLanguage(newConfig.primaryLanguage);
+      }
+    }
+  };
 
   // Handle completion of on-device diagnosis
   const handleDiagnosisComplete = async (result: DiagnosisResult) => {
@@ -98,11 +118,15 @@ export default function App() {
             </div>
           </div>
 
-          {/* Region & Language Selector (6 African Challenge Countries) */}
+          {/* Region & Language Selector Controls */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            <LanguageSelector
+              currentLanguage={language}
+              onSelectLanguage={(lang) => setLanguage(lang)}
+            />
             <CountrySelector
               currentCountry={country}
-              onSelectCountry={(c) => setCountry(c)}
+              onSelectCountry={handleCountryChange}
             />
           </div>
         </div>
@@ -117,7 +141,7 @@ export default function App() {
               onDiagnosisComplete={handleDiagnosisComplete}
               activeDiagnosis={activeDiagnosis}
               onReset={handleResetDiagnosis}
-              locale={locale}
+              locale={language}
               countryCode={country}
             />
           </div>
@@ -130,7 +154,7 @@ export default function App() {
                 onAdvanceDays={handleAdvanceDays}
                 onResetDays={handleResetDays}
                 onResetDiagnosis={handleResetDiagnosis}
-                locale={locale}
+                locale={language}
                 countryCode={country}
               />
             </div>
