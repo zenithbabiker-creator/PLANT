@@ -491,7 +491,7 @@ fun SorghumAppScreen(
                     }
                 }
 
-                // 4. Submit & Diagnose Button (Triggers local inference)
+                // 4. Submit & Diagnose Button
                 Button(
                     onClick = {
                         isProcessing = true
@@ -537,131 +537,112 @@ fun SorghumAppScreen(
                     }
                 }
 
-                // 5. Results Section (ONLY revealed AFTER local diagnosis completes)
+                // 5. Results Section
                 AnimatedVisibility(
                     visible = activeDiagnosis != null,
                     enter = fadeIn() + expandVertically()
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        // Disease & Local Storage Metadata Card
+                        // Disease Details & PHI Tracking Card
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isHealthy) Color(0xFF064E3B) else Color(0xFF4C0519)
-                            ),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
                             shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isHealthy) Color(0xFF10B981) else Color(0xFFF43F5E)
-                            )
+                            border = BorderStroke(1.dp, Color(0xFF1E293B)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = if (isArabic) (activeDiagnosis?.diseaseNameAr ?: "") else (activeDiagnosis?.diseaseNameEn ?: ""),
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 18.sp,
+                                        text = if (isArabic) "نتيجة التشخيص وإرشادات العلاج" else "Diagnosis Results & Safety",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
                                         color = Color.White
                                     )
                                     Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = Color(0x33000000)
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFF1E293B)
                                     ) {
                                         Text(
-                                            text = "ID: ${activeDiagnosis?.id?.takeLast(6)}",
-                                            fontSize = 11.sp,
-                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                            color = Color(0xFFE2E8F0),
+                                            text = activeDiagnosis?.syncStatus ?: "PENDING",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF38BDF8),
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                         )
                                     }
                                 }
 
-                                Text(
-                                    text = if (isArabic) (activeDetail?.treatment ?: "") else "Standard agricultural treatment guidance applied.",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFFCBD5E1),
-                                    lineHeight = 18.sp
-                                )
+                                Divider(color = Color(0xFF1E293B))
 
-                                Divider(color = Color(0x33FFFFFF))
-
-                                // Pesticide info
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Medication,
-                                        contentDescription = null,
-                                        tint = Color(0xFF38BDF8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = if (isArabic) "المبيد الموصى به: ${activeDetail?.pesticide ?: "لا يوجد"}" else "Pesticide: ${activeDetail?.pesticide ?: "None"}",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-
-                                // PHI Countdown interval
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Timer,
-                                        contentDescription = null,
-                                        tint = Color(0xFFFBBF24),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = if (isSmut) {
-                                            if (isArabic) "حرق فوري وتطهير بذور (فترة الأمان: 0 يوم)" else "Immediate rogueing (PHI: 0 Days)"
-                                        } else {
-                                            if (isArabic) "فترة الأمان (PHI): $remainingDays يوم" else "Safety Interval (PHI): $remainingDays Days"
-                                        },
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFFBBF24)
-                                    )
+                                // PHI Status / Safety Interval Display
+                                if (!isHealthy) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                color = if (isSmut) Color(0x25F43F5E) else Color(0x25FBBF24),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Timer,
+                                            contentDescription = null,
+                                            tint = if (isSmut) Color(0xFFF43F5E) else Color(0xFFFBBF24)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = if (isArabic) "فترة الأمان قبل الحصاد (PHI): $remainingDays يوم"
+                                                else "Pre-Harvest Interval (PHI): $remainingDays Days",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = Color.White
+                                            )
+                                            Text(
+                                                text = if (isSmut)
+                                                    if (isArabic) "تنبيه: مرض التفحم يتطلب الإزالة الميكانيكية والتطهير الفوري."
+                                                    else "Warning: Smut requires physical removal & immediate sanitization."
+                                                else
+                                                    if (isArabic) "يجب الالتزام بجدول الرش وفترة الأمان المدونة."
+                                                    else "Follow chemical spray safety interval guidelines.",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFFCBD5E1)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0x2510B981), RoundedCornerShape(12.dp))
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF34D399)
+                                        )
+                                        Text(
+                                            text = if (isArabic) "المحصول بحالة ممتازة ولا توجد علامات إصابة."
+                                            else "Crop is healthy with no detected pathogens.",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = Color.White
+                                        )
+                                    }
                                 }
                             }
-                        }
-
-                        // Reset / New Scan Button
-                        OutlinedButton(
-                            onClick = {
-                                activeDiagnosis = null
-                                activeDetail = null
-                                hasPhotoReady = false
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color(0xFF0F172A),
-                                contentColor = Color.White
-                            ),
-                            border = BorderStroke(1.dp, Color(0xFF334155))
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                tint = Color(0xFFFBBF24),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isArabic) "إعادة الفحص / فحص عينة جديدة" else "New Scan / Retake",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
                     }
                 }
