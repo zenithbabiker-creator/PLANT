@@ -1,0 +1,52 @@
+{
+  "diseases": [
+    {
+      "id": 0,
+      "raw_code": "anthracnose",
+      "name_ar": "مرض الأنثراكنوز",
+      "name_en": "Anthracnose",
+      "type": "fungal_disease",
+      "pesticide_ar": "أزوكسيستروبين (Azoxystrobin) أو مانكوزيب (Mancozeb)",
+      "pesticide_en": "Azoxystrobin or Mancozeb",
+      "treatment_ar": "رش المبيد الفطري الموصى به عند ظهور بقع الأوراق الأولى، وتجنب الري بالرش العلوي مع التخلص من بقايا المحصول المصاب.",
+      "treatment_en": "Spray recommended fungicide upon first leaf spots appearance. Avoid overhead irrigation and destroy infected crop residues.",
+      "safety_interval_days": 14
+    },
+    {
+      "id": 1,
+      "raw_code": "healthy",
+      "name_ar": "نبات سليم",
+      "name_en": "Healthy Crop",
+      "type": "healthy",
+      "pesticide_ar": "لا يوجد (النبات خالي من الإصابة)",
+      "pesticide_en": "None (Crop is healthy)",
+      "treatment_ar": "المحصول ممتاز وخالٍ من أعراض الإصابة. استمر في المراقبة الدورية والري المتوازن.",
+      "treatment_en": "Crop is clear and healthy. Maintain standard field monitoring and balanced irrigation schedule.",
+      "safety_interval_days": 0
+    },
+    {
+      "id": 2,
+      "raw_code": "rust",
+      "name_ar": "مرض الصدأ",
+      "name_en": "Sorghum Rust",
+      "type": "fungal_disease",
+      "pesticide_ar": "بروبيكونازول (Propiconazole) أو تيبوكونازول (Tebuconazole)",
+      "pesticide_en": "Propiconazole or Tebuconazole",
+      "treatment_ar": "رش المبيد الفطري الموصى به فور ظهور البثرات الحمراء الأولى على الأوراق لمنع التجريد المباشر للأوراق.",
+      "treatment_en": "Apply recommended fungicide immediately upon observing early reddish pustules to prevent leaf defoliation.",
+      "safety_interval_days": 21
+    },
+    {
+      "id": 3,
+      "raw_code": "smuts_group",
+      "name_ar": "مرض التفحم",
+      "name_en": "Smut",
+      "type": "smut_disease",
+      "pesticide_ar": "لا يتطلب رش خضري - يقتصر على تعقيم البذور جهازياً",
+      "pesticide_en": "No foliage spray needed - relies on systemic seed dressing",
+      "treatment_ar": "الإجراءات الزراعية والتفتير: معالجة البذور قبل الزراعة بالمطهرات الفطرية الجهازية أو الماء الساخن، وتقليع وتغطية السنابل/الرؤوس المصابة وحرقها فوراً لمنع انتشار السبورات.",
+      "treatment_en": "Cultural practice & rogueing: Treat seeds with systemic fungicides or hot water prior to planting, and rogue/burn infected heads immediately.",
+      "safety_interval_days": 0
+    }
+  ]
+}
