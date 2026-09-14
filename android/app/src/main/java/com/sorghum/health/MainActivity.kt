@@ -319,10 +319,10 @@ fun SorghumAppScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             if (activeDiagnosis == null) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterVertically,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                               Column(
+    horizontalAlignment = Alignment.CenterHorizontally, // ✅ صحيح: نوع المحاذاة أفقي
+    verticalArrangement = Arrangement.spacedBy(8.dp)
+) {
                                     Icon(
                                         imageVector = Icons.Default.CameraAlt,
                                         contentDescription = null,
