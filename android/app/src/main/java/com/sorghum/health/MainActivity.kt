@@ -343,7 +343,7 @@ fun SorghumAppScreen(
                                 }
                             } else {
                                 Column(
-                                    horizontalAlignment = Alignment.CenterVertically,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Icon(
