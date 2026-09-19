@@ -2,9 +2,25 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI, Type } from '@google/genai';
 
 const PORT = 3000;
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads');
+
+let geminiClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI | null {
+  if (!geminiClient && process.env.GEMINI_API_KEY) {
+    geminiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
+  }
+  return geminiClient;
+}
 
 // Ensure base uploads directory exists
 if (!fs.existsSync(UPLOADS_ROOT)) {
@@ -154,6 +170,113 @@ async function startServer() {
       ? forwarded.split(',')[0].trim() 
       : (req.socket.remoteAddress || '127.0.0.1');
     res.json({ ip });
+  });
+
+  // AI Multimodal Crop Disease Diagnosis endpoint via Gemini API
+  app.post('/api/diagnose-image', async (req, res) => {
+    try {
+      const { imageBase64, imageUri, language } = req.body;
+      const ai = getGeminiClient();
+
+      if (!ai) {
+        return res.status(200).json({
+          status: 'fallback',
+          message: 'Server Gemini AI not configured; use local on-device computer vision.'
+        });
+      }
+
+      let rawBase64 = '';
+      let mimeType = 'image/jpeg';
+
+      const sourceStr = imageBase64 || imageUri || '';
+      if (sourceStr.startsWith('data:image/')) {
+        const matches = sourceStr.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          mimeType = `image/${matches[1] === 'jpg' ? 'jpeg' : matches[1]}`;
+          rawBase64 = matches[2];
+        } else {
+          rawBase64 = sourceStr.replace(/^data:image\/\w+;base64,/, '');
+        }
+      } else if (sourceStr && !sourceStr.startsWith('http')) {
+        rawBase64 = sourceStr;
+      }
+
+      if (!rawBase64) {
+        return res.status(400).json({ error: 'Valid image base64 data required' });
+      }
+
+      const prompt = `You are a world-class plant pathology professor and agronomist specializing in Sorghum (Sorghum bicolor / الذرة الرفيعة) crop diseases.
+Analyze the provided plant photo carefully:
+1. Examine leaf blades, panicles/heads, stems, lesions, color distributions, pustules, sori, and fungal structures.
+2. Determine if the sorghum plant is diseased or healthy, and classify it into EXACTLY ONE of these categories:
+   - "sorghum_anthracnose": Elliptical/circular lesions with reddish-purple or tan-brown margins and dark centers (Colletotrichum sublineolum).
+   - "sorghum_head_smut": Panicle/head completely or partially converted into a large floral gall filled with dark brown/black spore mass (Sporisorium reilianum).
+   - "sorghum_loose_smut": Individual floral spikelets/kernels replaced by smut sori that burst early releasing black powdery spores (Sporisorium cruentum).
+   - "sorghum_rust": Small reddish, purplish, or brown raised pustules (uredinia) scattered on both leaf surfaces (Puccinia purpurea).
+   - "sorghum_healthy": Vibrant healthy green leaf/stem tissue without necrotic lesions, pustules, or smut galling.
+3. If the image is extremely blurry, out of focus, or not a plant, flag isBlurry as true.
+4. Extract observed visual symptoms and provide clear pathologist notes explaining the diagnosis in ${language === 'en' ? 'English' : 'Arabic'}.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: rawBase64
+              }
+            },
+            {
+              text: prompt
+            }
+          ]
+        },
+        config: {
+          temperature: 0.1,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              diseaseId: {
+                type: Type.STRING,
+                description: 'One of: sorghum_anthracnose, sorghum_head_smut, sorghum_loose_smut, sorghum_rust, sorghum_healthy'
+              },
+              diseaseNameEn: { type: Type.STRING },
+              diseaseNameAr: { type: Type.STRING },
+              isHealthy: { type: Type.BOOLEAN },
+              confidence: { type: Type.NUMBER, description: 'Confidence between 0.70 and 0.99' },
+              isBlurry: { type: Type.BOOLEAN },
+              blurScore: { type: Type.NUMBER, description: 'Estimated sharpness score 0-100' },
+              symptomsDetected: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: 'Visual evidence observed on leaves/panicle'
+              },
+              pathologistNotes: {
+                type: Type.STRING,
+                description: 'Detailed diagnostic explanation of visual indicators in the image'
+              }
+            },
+            required: ['diseaseId', 'isHealthy', 'confidence', 'isBlurry', 'symptomsDetected', 'pathologistNotes']
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text?.trim() || '{}');
+
+      return res.status(200).json({
+        status: 'success',
+        aiDiagnosed: true,
+        data: parsed
+      });
+    } catch (err: any) {
+      console.error('Gemini image diagnosis error:', err);
+      return res.status(200).json({
+        status: 'fallback',
+        error: err?.message || 'AI diagnosis unavailable; using smart CV.'
+      });
+    }
   });
 
   // Upload single diagnosis (supports multiple standard endpoints)

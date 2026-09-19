@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -14,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -30,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +68,7 @@ class MainActivity : ComponentActivity() {
     ) { permissions ->
         val cameraGranted = permissions[Manifest.permission.CAMERA] ?: false
         if (!cameraGranted) {
-            Toast.makeText(this, "Camera permission recommended for live crop diagnosis", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "صلاحية الكاميرا مفيدة لالتقاط صور المحاصيل المباشرة", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -106,7 +111,7 @@ class MainActivity : ComponentActivity() {
         onComplete: (DiagnosisRecord, DiseaseDetail?) -> Unit
     ) {
         lifecycleScope.launch(Dispatchers.Default) {
-            // 1. Run on-device local TFLite classification
+            // 1. Run deterministic on-device local TFLite classification
             val inference: InferenceResult = classifier.classify(bitmap)
 
             // 2. Query Repository for disease guidance
@@ -165,16 +170,46 @@ fun SorghumAppScreen(
     var activeDiagnosis by remember { mutableStateOf<DiagnosisRecord?>(null) }
     var activeDetail by remember { mutableStateOf<DiseaseDetail?>(null) }
     var remainingDays by remember { mutableIntStateOf(0) }
-    var hasPhotoReady by remember { mutableStateOf(false) }
+    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Launcher for image gallery selection
+    // 1. Camera Launcher (Captures photo directly)
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            previewBitmap = bitmap
+            activeDiagnosis = null
+        }
+    }
+
+    // 2. Camera Permission Launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(
+                context,
+                if (isArabic) "يرجى منح إذن الكاميرا لالتقاط صورة النبات" else "Please grant camera permission",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // 3. Gallery Image Picker Launcher (Decodes bitmap immediately for preview)
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             try {
-                hasPhotoReady = true
-                activeDiagnosis = null
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val decoded = BitmapFactory.decodeStream(inputStream)
+                    if (decoded != null) {
+                        previewBitmap = decoded
+                        activeDiagnosis = null
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -199,7 +234,7 @@ fun SorghumAppScreen(
                                 color = Color.White
                             )
                             Text(
-                                text = if (isArabic) "معالجة طرفية TFLite (أوفلاين بالكامل)" else "On-Device TFLite (Zero Internet Required)",
+                                text = if (isArabic) "معالجة طرفية TFLite ومعاينة فورية" else "On-Device TFLite & Instant Preview",
                                 fontSize = 11.sp,
                                 color = Color(0xFF34D399)
                             )
@@ -293,7 +328,7 @@ fun SorghumAppScreen(
                     }
                 }
 
-                // 2. Camera Viewfinder Window
+                // 2. Camera Viewfinder & Immediate Image Preview Window
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -310,19 +345,27 @@ fun SorghumAppScreen(
                     )
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        // Viewfinder Center Reticle
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp)
-                                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (activeDiagnosis == null) {
-                               Column(
-    horizontalAlignment = Alignment.CenterHorizontally, // ✅ صحيح: نوع المحاذاة أفقي
-    verticalArrangement = Arrangement.spacedBy(8.dp)
-) {
+                        // If previewBitmap exists, render it immediately!
+                        if (previewBitmap != null) {
+                            Image(
+                                bitmap = previewBitmap!!.asImageBitmap(),
+                                contentDescription = "Captured Sorghum Leaf",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            // Viewfinder Center Reticle Placeholder
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp)
+                                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.CameraAlt,
                                         contentDescription = null,
@@ -330,40 +373,56 @@ fun SorghumAppScreen(
                                         modifier = Modifier.size(48.dp)
                                     )
                                     Text(
-                                        text = if (isArabic) "نافذة الكاميرا جاهزة للالتقاط أو الرفع" else "Camera Viewfinder Ready",
+                                        text = if (isArabic) "نافذة الكاميرا والمعاينة الفورية" else "Instant Camera & Preview",
                                         color = Color.White,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = if (isArabic) "التقط صورة للورقة ثم اضغط على زر التحليل" else "Snap or upload leaf photo, then analyze",
+                                        text = if (isArabic) "التقط صورة للورقة أو ارفعها لمعاينتها فوراً" else "Snap or upload leaf photo to preview",
                                         color = Color(0xFF94A3B8),
                                         fontSize = 11.sp
                                     )
                                 }
-                            } else {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                            }
+                        }
+
+                        // Diagnosis Result Overlay if active
+                        if (activeDiagnosis != null) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xEE090D16),
+                                border = BorderStroke(1.dp, if (isHealthy) Color(0xFF10B981) else Color(0xFFF43F5E))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isHealthy) Icons.Default.CheckCircle else Icons.Default.Warning,
                                         contentDescription = null,
                                         tint = if (isHealthy) Color(0xFF34D399) else Color(0xFFF43F5E),
-                                        modifier = Modifier.size(54.dp)
+                                        modifier = Modifier.size(28.dp)
                                     )
-                                    Text(
-                                        text = if (isArabic) (activeDiagnosis?.diseaseNameAr ?: "") else (activeDiagnosis?.diseaseNameEn ?: ""),
-                                        color = Color.White,
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Black
-                                    )
-                                    Text(
-                                        text = "${(activeDiagnosis?.confidence?.times(100))?.toInt() ?: 95}% ${if (isArabic) "دقة النموذج" else "Confidence"}",
-                                        color = Color(0xFFFBBF24),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = if (isArabic) (activeDiagnosis?.diseaseNameAr ?: "") else (activeDiagnosis?.diseaseNameEn ?: ""),
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "${(activeDiagnosis?.confidence?.times(100))?.toInt() ?: 95}% ${if (isArabic) "دقة التشخيص" else "Confidence"}",
+                                            color = Color(0xFFFBBF24),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -433,10 +492,14 @@ fun SorghumAppScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Button 1: Camera Capture with Permission Check
                     OutlinedButton(
                         onClick = {
-                            hasPhotoReady = true
-                            activeDiagnosis = null
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                                cameraLauncher.launch(null)
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -462,6 +525,7 @@ fun SorghumAppScreen(
                         )
                     }
 
+                    // Button 2: Upload from Gallery
                     OutlinedButton(
                         onClick = {
                             galleryLauncher.launch("image/*")
@@ -495,8 +559,8 @@ fun SorghumAppScreen(
                 Button(
                     onClick = {
                         isProcessing = true
-                        val bitmap = Bitmap.createBitmap(224, 224, Bitmap.Config.ARGB_8888)
-                        onExecuteDiagnosis(bitmap) { record, detail ->
+                        val targetBitmap = previewBitmap ?: createDefaultSampleBitmap()
+                        onExecuteDiagnosis(targetBitmap) { record, detail ->
                             activeDiagnosis = record
                             activeDetail = detail
                             remainingDays = record.remainingPhiDays
@@ -518,135 +582,39 @@ fun SorghumAppScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = if (isArabic) "جاري المعالجة محلياً عبر TFLite..." else "Processing on-device...",
-                            fontWeight = FontWeight.Black,
+                            text = if (isArabic) "جاري الفحص الدقيق بالذكاء الاصطناعي..." else "Analyzing with TFLite...",
+                            fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Default.AutoFixHigh,
+                            imageVector = Icons.Default.Bolt,
                             contentDescription = null,
+                            tint = Color(0xFFFBBF24),
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (isArabic) "إرسال وفحص المحصول (TFLite أوفلاين)" else "Submit & Diagnose (Offline TFLite)",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 14.sp
+                            text = if (isArabic) "إرسال وتحليل الصورة" else "Submit & Diagnose",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
                         )
-                    }
-                }
-
-                // 5. Results Section
-                AnimatedVisibility(
-                    visible = activeDiagnosis != null,
-                    enter = fadeIn() + expandVertically()
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        // Disease Details & PHI Tracking Card
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                            shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, Color(0xFF1E293B)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = if (isArabic) "نتيجة التشخيص وإرشادات العلاج" else "Diagnosis Results & Safety",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = Color.White
-                                    )
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFF1E293B)
-                                    ) {
-                                        Text(
-                                            text = activeDiagnosis?.syncStatus ?: "PENDING",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF38BDF8),
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-
-                                Divider(color = Color(0xFF1E293B))
-
-                                // PHI Status / Safety Interval Display
-                                if (!isHealthy) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                color = if (isSmut) Color(0x25F43F5E) else Color(0x25FBBF24),
-                                                shape = RoundedCornerShape(12.dp)
-                                            )
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Timer,
-                                            contentDescription = null,
-                                            tint = if (isSmut) Color(0xFFF43F5E) else Color(0xFFFBBF24)
-                                        )
-                                        Column {
-                                            Text(
-                                                text = if (isArabic) "فترة الأمان قبل الحصاد (PHI): $remainingDays يوم"
-                                                else "Pre-Harvest Interval (PHI): $remainingDays Days",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp,
-                                                color = Color.White
-                                            )
-                                            Text(
-                                                text = if (isSmut)
-                                                    if (isArabic) "تنبيه: مرض التفحم يتطلب الإزالة الميكانيكية والتطهير الفوري."
-                                                    else "Warning: Smut requires physical removal & immediate sanitization."
-                                                else
-                                                    if (isArabic) "يجب الالتزام بجدول الرش وفترة الأمان المدونة."
-                                                    else "Follow chemical spray safety interval guidelines.",
-                                                fontSize = 11.sp,
-                                                color = Color(0xFFCBD5E1)
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(Color(0x2510B981), RoundedCornerShape(12.dp))
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = Color(0xFF34D399)
-                                        )
-                                        Text(
-                                            text = if (isArabic) "المحصول بحالة ممتازة ولا توجد علامات إصابة."
-                                            else "Crop is healthy with no detected pathogens.",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            color = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * Creates a deterministic default sorghum leaf bitmap for inference test
+ */
+private fun createDefaultSampleBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(224, 224, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val paint = Paint().apply {
+        color = android.graphics.Color.rgb(34, 139, 34) // Forest green leaf base
+    }
+    canvas.drawRect(0f, 0f, 224f, 224f, paint)
+    return bitmap
 }

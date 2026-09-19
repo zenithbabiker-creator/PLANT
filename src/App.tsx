@@ -13,14 +13,8 @@ import { DiagnosisResult } from './types';
 import { SorghumLocalRoomDatabase } from './data/local/roomDb';
 import { SorghumExtensionRegistry } from './core/extensionHook';
 import { SorghumWorkManagerSyncService } from './sync/workManager';
-import { 
-  SupportedLocale, 
-  SupportedCountryCode, 
-  SupportedLanguageCode,
-  COUNTRY_CONFIGS, 
-  SUPPORTED_LANGUAGES,
-  getStringsForCountry 
-} from './data/i18n';
+import { SupportedLocale, SupportedCountryCode, SupportedLanguageCode, COUNTRY_CONFIGS, SUPPORTED_LANGUAGES, getStringsForCountry } from './data/i18n';
+import { INITIAL_SORGHUM_DISEASES } from './data/diseasesDatabase';
 
 export default function App() {
   const db = SorghumLocalRoomDatabase.getInstance();
@@ -78,6 +72,26 @@ export default function App() {
       setActiveDiagnosis({ ...updated });
       await extensionRegistry.executePhiDecrement(updated.remainingPhiDays || 0);
     }
+  };
+
+  const handleOverrideDisease = (newDiseaseId: string) => {
+    if (!activeDiagnosis) return;
+    const disease = INITIAL_SORGHUM_DISEASES.find(d => d.id_disease === newDiseaseId) || INITIAL_SORGHUM_DISEASES[0];
+    const isHealthy = disease.is_healthy;
+    const updated: DiagnosisResult = {
+      ...activeDiagnosis,
+      status: isHealthy ? 'HEALTHY' : 'DISEASED',
+      confidence: 1.0,
+      isManualOverride: true,
+      disease,
+      symptomsDetected: [disease.disease_name_ar],
+      pathologistNotes: `تم تصحيح وتأكيد التشخيص وفق تقدير الخبير: ${disease.disease_name_ar}`,
+      initialPhiDays: disease.phi_days,
+      remainingPhiDays: disease.phi_days,
+      appliedPesticideDate: isHealthy ? undefined : Date.now()
+    };
+    db.saveDiagnosis(updated);
+    setActiveDiagnosis(updated);
   };
 
   return (
@@ -154,6 +168,7 @@ export default function App() {
                 onAdvanceDays={handleAdvanceDays}
                 onResetDays={handleResetDays}
                 onResetDiagnosis={handleResetDiagnosis}
+                onOverrideDisease={handleOverrideDisease}
                 locale={language}
                 countryCode={country}
               />

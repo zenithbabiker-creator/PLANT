@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Camera, 
   RefreshCw, 
   MapPin, 
-  Zap, 
   CheckCircle2, 
   AlertOctagon, 
   EyeOff, 
   Upload, 
   Globe,
+  Sparkles,
+  AlertCircle,
+  ImageIcon,
   Check,
-  Video,
-  VideoOff,
-  Image as ImageIcon
+  Zap
 } from 'lucide-react';
 import { DiagnosisResult, DiagnosisStatus } from '../types';
 import { SorghumOnDeviceClassifier } from '../ml/sorghumClassifier';
@@ -40,6 +40,8 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
   const [isLiveCamera, setIsLiveCamera] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string>('');
+  const [imagePreviewName, setImagePreviewName] = useState<string>('');
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
   const [clientIp, setClientIp] = useState<string>('127.0.0.1');
   const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -48,9 +50,13 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // 1. Automatically start camera and fetch location/IP on component mount
+  // Default high-resolution test sample
+  const DEFAULT_SAMPLE_LEAF = 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=800&q=80';
+
+  // 1. Initial setup: attempt starting camera, fetch GPS & IP
   useEffect(() => {
     startLiveCamera();
     fetchCurrentLocation();
@@ -78,14 +84,14 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setGpsLocation({
-            latitude: Number(pos.coords.latitude.toFixed(5)),
-            longitude: Number(pos.coords.longitude.toFixed(5)),
+            latitude: Number(pos.coords.latitude.toFixed(4)),
+            longitude: Number(pos.coords.longitude.toFixed(4)),
             accuracy: Math.round(pos.coords.accuracy)
           });
           setIsLocating(false);
         },
         () => {
-          // Fallback approximate coordinates in Sorghum belt
+          // Gezira Agricultural Scheme coordinates fallback
           setGpsLocation({
             latitude: 14.3852,
             longitude: 33.5241,
@@ -99,11 +105,14 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
   };
 
   const startLiveCamera = async () => {
+    setCameraError(null);
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setCameraError(locale === 'ar' ? 'الكاميرا المباشرة غير مدعومة في هذا المتصفح، يمكنك رفع صورة مباشرة.' : 'Live camera not supported on this browser; use image upload.');
         return;
       }
 
+      // Request live camera stream with environment (back) camera preference
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: { ideal: 'environment' },
@@ -115,13 +124,20 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
 
       streamRef.current = stream;
       setIsLiveCamera(true);
+      setCapturedImageUri('');
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
       }
     } catch (err: any) {
-      console.warn('Camera access unavailable:', err);
+      console.warn('Camera access denied or unavailable:', err);
       setIsLiveCamera(false);
+      setCameraError(
+        locale === 'ar' 
+          ? 'تعذر الوصول التلقائي للكاميرا (صلاحيات المتصفح). يمكنك استخدام زر الالتقاط/الرفع أدناه.' 
+          : 'Camera permission required. Please grant permission or upload an image.'
+      );
     }
   };
 
@@ -136,7 +152,7 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
     setIsLiveCamera(false);
   };
 
-  // Play auditory tone for agricultural field feedback
+  // Play auditory tone for field diagnosis feedback
   const playAudioTone = (type: DiagnosisStatus) => {
     if (!soundEnabled || typeof window === 'undefined' || type === 'IDLE') return;
     try {
@@ -175,7 +191,7 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
     } catch {}
   };
 
-  // Capture current video frame to freeze photo
+  // Capture current video frame to freeze photo preview immediately
   const handleSnapPhoto = () => {
     if (videoRef.current) {
       try {
@@ -186,24 +202,32 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const dataUri = canvas.toDataURL('image/jpeg', 0.88);
+          const dataUri = canvas.toDataURL('image/jpeg', 0.92);
           setCapturedImageUri(dataUri);
+          setImagePreviewName(locale === 'ar' ? 'صورة ملتقطة من الكاميرا' : 'Camera Snapshot');
           stopLiveCamera();
+          if (activeDiagnosis) {
+            onReset();
+          }
         }
       } catch (e) {
         console.error('Frame capture failed', e);
       }
+    } else {
+      // If live camera is not running, trigger the native camera capture input
+      nativeCameraInputRef.current?.click();
     }
   };
 
-  // Upload photo from gallery
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Immediate Preview on Image File Selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const uri = event.target?.result as string;
         setCapturedImageUri(uri);
+        setImagePreviewName(file.name);
         stopLiveCamera();
         if (activeDiagnosis) {
           onReset();
@@ -213,14 +237,24 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
     }
   };
 
-  // Execute on-device local TFLite classification
+  // Load sample leaf for testing
+  const handleLoadSample = () => {
+    setCapturedImageUri(DEFAULT_SAMPLE_LEAF);
+    setImagePreviewName(locale === 'ar' ? 'عينة ورقة ذرة نموذجية' : 'Sample Sorghum Leaf');
+    stopLiveCamera();
+    if (activeDiagnosis) {
+      onReset();
+    }
+  };
+
+  // Execute deterministic on-device local classification & Gemini API
   const handleRunDiagnosis = async () => {
     setIsProcessing(true);
 
     try {
       let imageUriToProcess = capturedImageUri;
 
-      // If live camera is still playing and user hits analyze directly, snap frame
+      // If live camera stream is active and user clicks analyze directly, capture frame first
       if (isLiveCamera && videoRef.current) {
         const video = videoRef.current;
         const canvas = document.createElement('canvas');
@@ -229,23 +263,30 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          imageUriToProcess = canvas.toDataURL('image/jpeg', 0.88);
+          imageUriToProcess = canvas.toDataURL('image/jpeg', 0.92);
           setCapturedImageUri(imageUriToProcess);
           stopLiveCamera();
         }
       } else if (!imageUriToProcess) {
-        // High quality fallback sample image
-        imageUriToProcess = 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80';
+        imageUriToProcess = DEFAULT_SAMPLE_LEAF;
         setCapturedImageUri(imageUriToProcess);
       }
 
-      // Simulate on-device TFLite tensor forward pass latency (approx 200ms)
-      await new Promise((r) => setTimeout(r, 280));
-
+      // Allow image element to decode for deterministic tensor analysis
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = imageUriToProcess;
 
+      await new Promise((resolve) => {
+        if (img.complete) {
+          resolve(null);
+        } else {
+          img.onload = () => resolve(null);
+          img.onerror = () => resolve(null);
+        }
+      });
+
+      // Execute deterministic inference pipeline
       const result = await SorghumOnDeviceClassifier.classifyOffline(
         img,
         imageUriToProcess,
@@ -258,7 +299,7 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
       playAudioTone(result.status);
       onDiagnosisComplete(result);
     } catch (e) {
-      console.error('TFLite inference failure:', e);
+      console.error('Deterministic inference failure:', e);
     } finally {
       setIsProcessing(false);
     }
@@ -266,13 +307,14 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
 
   const handleRetake = () => {
     setCapturedImageUri('');
+    setImagePreviewName('');
     onReset();
     startLiveCamera();
   };
 
   const currentStatus: DiagnosisStatus | null = activeDiagnosis ? activeDiagnosis.status : null;
 
-  // Frame colors based purely on on-device diagnosis result
+  // Frame colors based purely on diagnosis result
   let frameBorderColor = 'border-slate-800';
   let frameGlowColor = 'shadow-slate-950/50';
   let bannerElement: React.ReactNode = null;
@@ -315,14 +357,12 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
     );
   }
 
-  const hasImageReady = Boolean(capturedImageUri || isLiveCamera);
-
   return (
     <div className="w-full bg-slate-900/90 rounded-3xl border border-slate-800 p-4 md:p-5 shadow-xl shadow-black/20 backdrop-blur-sm flex flex-col gap-4">
-      {/* 1. STATUS BANNER (ONLY shown AFTER analysis) */}
+      {/* 1. STATUS BANNER (shown AFTER analysis) */}
       {bannerElement}
 
-      {/* 2. VIEWFINDER WINDOW */}
+      {/* 2. VIEWFINDER & IMMEDIATE IMAGE PREVIEW CONTAINER */}
       <div
         className={`relative w-full aspect-square bg-slate-950 overflow-hidden border-[4px] transition-all duration-300 ${
           bannerElement ? 'rounded-b-2xl' : 'rounded-2xl'
@@ -338,29 +378,45 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
             className="w-full h-full object-cover"
           />
         ) : capturedImageUri ? (
-          /* Captured or Uploaded Photo */
-          <img
-            ref={imageRef}
-            src={capturedImageUri}
-            alt="Captured Sorghum Leaf"
-            className="w-full h-full object-cover"
-          />
+          /* IMMEDIATE PREVIEW of Captured or Uploaded Photo */
+          <div className="relative w-full h-full">
+            <img
+              ref={imageRef}
+              src={capturedImageUri}
+              alt="Preview of Sorghum Plant"
+              className="w-full h-full object-cover"
+            />
+            {/* Instant Loaded Image Confirmation Overlay */}
+            {!activeDiagnosis && (
+              <div className="absolute top-3 left-3 bg-slate-950/85 backdrop-blur-md text-emerald-400 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 border border-emerald-500/40 shadow-lg">
+                <Check className="w-3.5 h-3.5" />
+                <span>{locale === 'ar' ? 'تم تجهيز الصورة للمعاينة' : 'Image Ready for Inference'}</span>
+              </div>
+            )}
+          </div>
         ) : (
           /* Standby Viewfinder Placeholder */
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-950 via-slate-900/60 to-slate-950">
             <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 mb-3 shadow-inner">
-              <Camera className="w-10 h-10 stroke-[1.8]" />
+              <Camera className="w-10 h-10 stroke-[1.8] text-emerald-400" />
             </div>
             <p className="text-sm font-bold text-slate-200 mb-1">
-              {locale === 'ar' ? 'الكاميرا جاهزة للالتقاط أو الرفع' : 'Camera Ready to Capture or Upload'}
+              {locale === 'ar' ? 'نافذة الكاميرا والمعاينة الفورية' : 'Instant Camera & Image Preview'}
             </p>
-            <p className="text-xs text-slate-400 max-w-xs">
-              {locale === 'ar' ? 'وجّه الكاميرا نحو ورقة النبات أو ارفع صورة واضحة' : 'Aim camera at the sorghum leaf or upload a photo'}
+            <p className="text-xs text-slate-400 max-w-xs mb-3">
+              {locale === 'ar' ? 'التقط صورة لورقة الذرة أو ارفعها من المعرض لمعاينتها فوراً' : 'Snap or upload a leaf photo to view instant preview'}
             </p>
+            <button
+              onClick={handleLoadSample}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{locale === 'ar' ? 'تجربة عينة ورقة ذرة نموذجية' : 'Use Sample Sorghum Leaf'}</span>
+            </button>
           </div>
         )}
 
-        {/* Viewfinder Target Focus Reticle */}
+        {/* Viewfinder Target Reticle */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
           <div className="w-full h-full border-2 border-dashed border-white/30 rounded-2xl relative flex items-center justify-center">
             {/* Corners */}
@@ -369,18 +425,18 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
             <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
             <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
 
-            {/* Scanning Laser Animation during TFLite Inference */}
+            {/* Scanning Laser Animation during Inference */}
             {isProcessing && (
               <motion.div
                 animate={{ y: [-110, 110, -110] }}
-                transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
                 className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_20px_rgba(52,211,153,1)]"
               />
             )}
           </div>
         </div>
 
-        {/* Top Badges */}
+        {/* Top Badges (GPS & Info) */}
         <div className="absolute top-3 right-3 bg-slate-950/85 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-slate-800 shadow-md">
           <MapPin className={`w-3.5 h-3.5 ${isLocating ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
           {gpsLocation ? (
@@ -388,7 +444,7 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
               {gpsLocation.latitude.toFixed(2)}°, {gpsLocation.longitude.toFixed(2)}°
             </span>
           ) : (
-            <span>GPS Ready</span>
+            <span>GPS 14.38°, 33.52°</span>
           )}
         </div>
 
@@ -396,31 +452,44 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
         {isLiveCamera && (
           <div className="absolute bottom-3 left-3 bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg animate-pulse">
             <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span>{locale === 'ar' ? 'بث حي للكاميرا' : 'Live Camera Active'}</span>
+            <span>{locale === 'ar' ? 'بث الكاميرا المباشر نشط' : 'Live Camera Active'}</span>
           </div>
         )}
       </div>
 
-      {/* 3. DUAL CAPTURE / UPLOAD ACTION SELECTOR */}
+      {/* Camera Permission Warning Banner if any */}
+      {cameraError && !isLiveCamera && !capturedImageUri && (
+        <div className="p-3 rounded-2xl bg-amber-950/50 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold">{cameraError}</p>
+            <p className="text-[11px] text-amber-300/80 mt-0.5">
+              {locale === 'ar' ? 'يمكنك الضغط على زر "رفع من المعرض" أو "التقاط بالكاميرا" أدناه.' : 'You can use the direct capture or upload button below.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 3. DUAL CAPTURE & UPLOAD ACTION CONTROLS */}
       <div className="grid grid-cols-2 gap-2.5">
-        {/* Option 1: Live Camera Snap / Restart */}
+        {/* Button 1: Snap Photo / Open Live Camera */}
         <button
           onClick={isLiveCamera ? handleSnapPhoto : startLiveCamera}
           className={`py-3 px-3 rounded-2xl border font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
             isLiveCamera
-              ? 'bg-emerald-950/70 border-emerald-500 text-emerald-300 hover:bg-emerald-900/80 shadow-md'
+              ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300 hover:bg-emerald-900 shadow-md shadow-emerald-950/50'
               : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200 shadow-sm'
           }`}
         >
           <Camera className="w-4 h-4 text-emerald-400" />
           <span>
             {isLiveCamera
-              ? (locale === 'ar' ? 'التقاط صورة الكاميرا' : 'Snap Photo')
-              : (locale === 'ar' ? 'فتح الكاميرا فوراً' : 'Open Camera')}
+              ? (locale === 'ar' ? 'التقاط الصورة الآن' : 'Snap Photo Now')
+              : (locale === 'ar' ? 'تشغيل الكاميرا' : 'Open Camera')}
           </span>
         </button>
 
-        {/* Option 2: Upload Photo from Gallery */}
+        {/* Button 2: Upload Photo from Gallery */}
         <label className="py-3 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs md:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm">
           <Upload className="w-4 h-4 text-sky-400" />
           <span>{locale === 'ar' ? 'رفع صورة من المعرض' : 'Upload from Gallery'}</span>
@@ -429,14 +498,24 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleFileUpload}
+            onChange={handleFileChange}
           />
         </label>
       </div>
 
+      {/* Hidden Native Camera Input for mobile direct camera app launch */}
+      <input
+        ref={nativeCameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* 4. PRIMARY SUBMIT & DIAGNOSE BUTTON */}
       <div className="flex items-center gap-2.5">
-        {activeDiagnosis && (
+        {(activeDiagnosis || capturedImageUri) && (
           <button
             onClick={handleRetake}
             className="h-14 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs md:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
@@ -461,12 +540,16 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
           {isProcessing ? (
             <>
               <RefreshCw className="w-6 h-6 animate-spin text-emerald-300" />
-              <span>{locale === 'ar' ? 'جاري فحص النبتة...' : 'Analyzing plant...'}</span>
+              <span>{locale === 'ar' ? 'جاري الفحص الدقيق...' : 'Executing Inference...'}</span>
             </>
           ) : (
             <>
-              <Camera className="w-6 h-6 stroke-[2.2] text-emerald-200" />
-              <span>{locale === 'ar' ? 'إرسال وتحليل الصورة' : 'Submit & Diagnose'}</span>
+              <Zap className="w-6 h-6 stroke-[2.2] text-emerald-200" />
+              <span>
+                {capturedImageUri 
+                  ? (locale === 'ar' ? 'بدء فحص وتشخيص الصورة' : 'Analyze Selected Photo')
+                  : (locale === 'ar' ? 'إرسال وتحليل الصورة' : 'Submit & Diagnose')}
+              </span>
             </>
           )}
         </motion.button>

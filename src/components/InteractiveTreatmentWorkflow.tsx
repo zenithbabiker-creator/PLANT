@@ -7,17 +7,18 @@ import {
   Database, 
   Clock, 
   SprayCan, 
-  ShieldCheck, 
   RotateCcw,
   Check,
   MapPin,
   Globe,
   Calendar,
-  CloudCheck
+  Sparkles,
+  Edit3,
+  CheckCheck
 } from 'lucide-react';
 import { DiagnosisResult } from '../types';
 import { SorghumLocalRoomDatabase } from '../data/local/roomDb';
-import { getLocalizedDisease } from '../data/diseasesDatabase';
+import { getLocalizedDisease, INITIAL_SORGHUM_DISEASES } from '../data/diseasesDatabase';
 import { 
   SupportedLocale, 
   SupportedCountryCode, 
@@ -35,6 +36,7 @@ interface InteractiveTreatmentWorkflowProps {
   onAdvanceDays: (days: number) => void;
   onResetDays?: (days: number) => void;
   onResetDiagnosis: () => void;
+  onOverrideDisease?: (diseaseId: string) => void;
 }
 
 export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflowProps> = ({
@@ -43,13 +45,16 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
   countryCode,
   onAdvanceDays,
   onResetDays,
-  onResetDiagnosis
+  onResetDiagnosis,
+  onOverrideDisease
 }) => {
   const activeCountry = countryCode || 'sudan';
   const countryConfig = COUNTRY_CONFIGS[activeCountry] || COUNTRY_CONFIGS.sudan;
   const effectiveLang = locale || countryConfig.primaryLanguage;
   const t = getStringsForCountry(activeCountry, locale);
   const db = SorghumLocalRoomDatabase.getInstance();
+
+  const [isOverrideOpen, setIsOverrideOpen] = useState<boolean>(false);
 
   // Localized disease info
   const localizedDisease = diagnosis.disease 
@@ -99,11 +104,11 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
     const queried = db.getPesticideForDisease(diseaseId);
     setDbPesticideData(queried);
 
-    const timer1 = setTimeout(() => setCurrentStage(2), 300);
-    const timer2 = setTimeout(() => setCurrentStage(3), 750);
-    const timer3 = setTimeout(() => setCurrentStage(4), 1200);
-    const timer4 = setTimeout(() => setCurrentStage(5), 1700);
-    const timer5 = setTimeout(() => setCurrentStage(6), 2300);
+    const timer1 = setTimeout(() => setCurrentStage(2), 200);
+    const timer2 = setTimeout(() => setCurrentStage(3), 500);
+    const timer3 = setTimeout(() => setCurrentStage(4), 900);
+    const timer4 = setTimeout(() => setCurrentStage(5), 1300);
+    const timer5 = setTimeout(() => setCurrentStage(6), 1800);
 
     return () => {
       clearTimeout(timer1);
@@ -112,7 +117,7 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
       clearTimeout(timer4);
       clearTimeout(timer5);
     };
-  }, [diagnosis.id]);
+  }, [diagnosis.id, diagnosis.disease?.id_disease]);
 
   const stagesList: { num: WorkflowStage; title: string; shortLabel: string }[] = [
     { num: 1, title: t.workflowStage1, shortLabel: effectiveLang === 'ar' ? 'فحص' : 'Scan' },
@@ -148,6 +153,11 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
               <span className="text-[11px] font-mono text-slate-400">
                 ID: {diagnosis.id.slice(-7)}
               </span>
+              {diagnosis.isManualOverride && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {effectiveLang === 'ar' ? 'معدل يدوياً' : 'Overridden'}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1 flex-wrap font-medium">
               <span className="flex items-center gap-1">
@@ -168,22 +178,96 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setCurrentStage(1);
-            setTimeout(() => setCurrentStage(2), 300);
-            setTimeout(() => setCurrentStage(3), 750);
-            setTimeout(() => setCurrentStage(4), 1200);
-            setTimeout(() => setCurrentStage(5), 1700);
-            setTimeout(() => setCurrentStage(6), 2300);
-          }}
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-bold"
-          title="Replay sequence"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span className="hidden sm:inline">{effectiveLang === 'ar' ? 'إعادة العرض' : 'Replay'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Agronomist Correction / Override Toggle */}
+          {onOverrideDisease && (
+            <button
+              onClick={() => setIsOverrideOpen(!isOverrideOpen)}
+              className={`p-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+                isOverrideOpen 
+                  ? 'bg-amber-500 text-slate-950 border-amber-400' 
+                  : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
+              }`}
+              title={effectiveLang === 'ar' ? 'تعديل أو تصحيح التشخيص' : 'Correct / Override Diagnosis'}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>{effectiveLang === 'ar' ? 'تصحيح التشخيص' : 'Correct Diagnosis'}</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setCurrentStage(1);
+              setTimeout(() => setCurrentStage(2), 200);
+              setTimeout(() => setCurrentStage(3), 500);
+              setTimeout(() => setCurrentStage(4), 900);
+              setTimeout(() => setCurrentStage(5), 1300);
+              setTimeout(() => setCurrentStage(6), 1800);
+            }}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            title="Replay sequence"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">{effectiveLang === 'ar' ? 'إعادة العرض' : 'Replay'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* AGRONOMIST MANUAL CORRECTION PANEL */}
+      <AnimatePresence>
+        {isOverrideOpen && onOverrideDisease && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-slate-900 border-2 border-amber-500/40 rounded-2xl p-4 shadow-xl space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Sparkles className="w-4 h-4" />
+                <h4 className="text-sm font-black">
+                  {effectiveLang === 'ar' ? 'تعديل التشخيص وفق تقدير الخبير الزراعي:' : 'Override diagnosis with expert agronomy decision:'}
+                </h4>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                {effectiveLang === 'ar' ? 'سيتم تحديث المبيد وفترة الأمان تلقائياً' : 'Pesticide & PHI will recalculate'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {INITIAL_SORGHUM_DISEASES.map((dis) => {
+                const isSelected = diagnosis.disease?.id_disease === dis.id_disease;
+                return (
+                  <button
+                    key={dis.id_disease}
+                    onClick={() => {
+                      onOverrideDisease(dis.id_disease);
+                      setIsOverrideOpen(false);
+                    }}
+                    className={`p-2.5 rounded-xl border text-right transition-all flex items-center justify-between gap-2 ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md'
+                        : 'bg-slate-950 hover:bg-slate-800 text-slate-200 border-slate-800'
+                    }`}
+                  >
+                    <div>
+                      <span className="text-xs font-bold block">{dis.disease_name_ar}</span>
+                      <span className="text-[10px] opacity-80 block">{dis.disease_name}</span>
+                    </div>
+                    {isSelected ? (
+                      <CheckCheck className="w-4 h-4 text-slate-950 shrink-0" />
+                    ) : (
+                      <span className="text-[10px] font-mono opacity-60">
+                        {dis.phi_days} {effectiveLang === 'ar' ? 'يوم' : 'd'}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 2. VISUAL WORKFLOW SEQUENCE PROGRESSION */}
       <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-3 backdrop-blur-md">
@@ -254,14 +338,14 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
 
         {/* STEP DETAILS */}
         <div className="space-y-4">
-          {/* STEP 3: Detected Disease Details */}
+          {/* STEP 3: Detected Disease Details & Pathologist Notes */}
           <AnimatePresence>
             {currentStage >= 3 ? (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 shadow-inner"
+                className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 shadow-inner space-y-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
@@ -283,6 +367,38 @@ export const InteractiveTreatmentWorkflow: React.FC<InteractiveTreatmentWorkflow
                     </p>
                   </div>
                 </div>
+
+                {/* Pathologist Visual Symptoms & Notes */}
+                {(diagnosis.symptomsDetected?.length || diagnosis.pathologistNotes) && (
+                  <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2">
+                    {diagnosis.symptomsDetected && diagnosis.symptomsDetected.length > 0 && (
+                      <div>
+                        <span className="text-[11px] font-bold text-emerald-400 block mb-1">
+                          {effectiveLang === 'ar' ? 'الأعراض والعلامات البصرية المرصودة في الصورة:' : 'Visual Symptoms Detected:'}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {diagnosis.symptomsDetected.map((sym, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[11px] font-medium bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-lg"
+                            >
+                              • {sym}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {diagnosis.pathologistNotes && (
+                      <p className="text-[11px] text-slate-300 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 leading-relaxed">
+                        <strong className="text-amber-400">
+                          {effectiveLang === 'ar' ? 'تقرير فحص العينة: ' : 'Pathology Report: '}
+                        </strong>
+                        {diagnosis.pathologistNotes}
+                      </p>
+                    )}
+                  </div>
+                )}
               </motion.div>
             ) : (
               <div className="p-4 rounded-2xl bg-slate-950/40 border border-dashed border-slate-800/80 text-center text-xs text-slate-500">

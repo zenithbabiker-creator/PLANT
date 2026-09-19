@@ -32,6 +32,9 @@ export interface DiagnosisResult {
   isBlurry: boolean;
   blurScore: number;
   disease?: DiseaseEntity;
+  symptomsDetected?: string[];
+  pathologistNotes?: string;
+  isManualOverride?: boolean;
   imageUri: string;
   gps: {
     latitude: number;
