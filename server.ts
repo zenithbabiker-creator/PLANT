@@ -233,7 +233,8 @@ Analyze the provided plant photo carefully:
           ]
         },
         config: {
-          temperature: 0.1,
+          temperature: 0.0,
+          seed: 42,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
